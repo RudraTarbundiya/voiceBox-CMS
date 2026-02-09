@@ -76,7 +76,7 @@ const GoogleLoginButton = ({ onSuccess, enableOneTap = true }) => {
             <div id="g_id_onload"></div>
 
             {/* Standard Google button */}
-            <div className={`w-full ${loading ? 'opacity-50 pointer-events-none' : ''}`}>
+            <div className={`flex justify-center ${loading ? 'opacity-50 pointer-events-none' : ''}`}>
                 <GoogleLogin
                     onSuccess={handleGoogleSuccess}
                     onError={handleGoogleError}

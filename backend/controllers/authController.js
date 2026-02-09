@@ -211,6 +211,37 @@ export const logout = async (req, res) => {
 };
 
 /**
+ * Logout from all devices - delete all sessions for user
+ * POST /api/auth/logout-all
+ */
+export const logoutAll = async (req, res) => {
+    try {
+        const userId = req.user._id;
+
+        // Delete all sessions for this user
+        const result = await Session.deleteMany({ userId });
+
+        console.log(`🚪 All sessions deleted for user: ${req.user.email} (${result.deletedCount} sessions)`);
+
+        // Clear cookie
+        res.clearCookie('sessionId');
+
+        res.json({
+            success: true,
+            message: `Logged out from ${result.deletedCount} device(s) successfully`
+        });
+
+    } catch (error) {
+        console.error('Logout All Error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error during logout'
+        });
+    }
+};
+
+
+/**
  * Get current user info
  * GET /api/auth/me
  */

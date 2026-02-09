@@ -8,6 +8,7 @@ import {
     register,
     login,
     logout,
+    logoutAll,
     getMe,
     googleAuth
 } from '../controllers/authController.js';
@@ -22,6 +23,8 @@ router.post('/google', googleAuth);
 
 // Protected routes (require authentication)
 router.post('/logout', authenticate, logout);
+router.post('/logout-all', authenticate, logoutAll);
 router.get('/me', authenticate, getMe);
 
 export default router;
+

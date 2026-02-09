@@ -124,6 +124,23 @@ export const AuthProvider = ({ children }) => {
     };
 
     /**
+     * Logout from all devices
+     */
+    const logoutAll = async () => {
+        try {
+            const response = await api.post('/auth/logout-all');
+            setUser(null);
+            showAlert('success', response.data.message || 'Logged out from all devices');
+            return { success: true };
+        } catch (error) {
+            // Clear user even if API fails
+            setUser(null);
+            showAlert('success', 'Logged out from all devices');
+            return { success: true };
+        }
+    };
+
+    /**
      * Check if user has specific role
      */
     const hasRole = (roles) => {
@@ -147,6 +164,7 @@ export const AuthProvider = ({ children }) => {
         login,
         googleLogin,
         logout,
+        logoutAll,
         hasRole,
         checkAuth
     };

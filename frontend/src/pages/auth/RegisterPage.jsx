@@ -141,7 +141,7 @@ const RegisterPage = () => {
                                 name="name"
                                 value={formData.name}
                                 onChange={handleChange}
-                                placeholder="John Doe"
+                                placeholder="enter name"
                                 className={`input ${errors.name ? 'input-error' : ''}`}
                             />
                             {errors.name && (

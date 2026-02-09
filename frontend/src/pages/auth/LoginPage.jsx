@@ -15,8 +15,8 @@ const LoginPage = () => {
     const location = useLocation();
 
     const [formData, setFormData] = useState({
-        email: '',
-        password: ''
+        email: 'rudra@gmail.com',
+        password: '123456'
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
