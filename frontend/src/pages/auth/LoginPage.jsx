@@ -3,7 +3,7 @@
  * User authentication with email/password and Google OAuth
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import Button from '../../components/common/Button';
@@ -21,19 +21,19 @@ const LoginPage = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
-    // Redirect if already logged in
-    if (isAuthenticated) {
-        const from = location.state?.from?.pathname || getDashboardPath(user);
-        navigate(from, { replace: true });
-        return null;
-    }
-
     function getDashboardPath(user) {
         if (!user) return '/dashboard';
         if (user.role === 'admin') return '/admin';
         if (user.role === 'coordinator') return '/coordinator';
         return '/dashboard';
     }
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            const from = location.state?.from?.pathname || getDashboardPath(user);
+            navigate(from, { replace: true });
+        }
+    }, [isAuthenticated, location.state, navigate, user]);
 
     const handleChange = (e) => {
         setFormData(prev => ({

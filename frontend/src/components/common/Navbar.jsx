@@ -37,14 +37,14 @@ const Navbar = () => {
                 <div className="flex justify-between h-16">
                     {/* Logo and Brand */}
                     <div className="flex items-center">
-                        <Link to="/" className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2">
                             <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-700 rounded-lg flex items-center justify-center">
                                 <span className="text-white font-bold text-lg">C</span>
                             </div>
                             <span className="font-semibold text-gray-900 text-lg hidden sm:block">
                                 CMS
                             </span>
-                        </Link>
+                        </div>
                     </div>
 
                     {/* Navigation Links */}

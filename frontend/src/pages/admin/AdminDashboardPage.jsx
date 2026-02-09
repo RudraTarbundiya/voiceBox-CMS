@@ -29,6 +29,7 @@ const AdminDashboardPage = () => {
     const [selectedComplaint, setSelectedComplaint] = useState(null);
     const [showAssignModal, setShowAssignModal] = useState(false);
     const [showCloseModal, setShowCloseModal] = useState(false);
+    const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [showPromoteModal, setShowPromoteModal] = useState(false);
 
     // Form state
@@ -118,6 +119,12 @@ const AdminDashboardPage = () => {
         } catch (error) {
             showAlert('error', error.response?.data?.message || 'Failed to promote faculty');
         }
+    };
+
+    // View details handler
+    const handleViewDetails = (complaint) => {
+        setSelectedComplaint(complaint);
+        setShowDetailsModal(true);
     };
 
     // Action handler
@@ -234,6 +241,7 @@ const AdminDashboardPage = () => {
                                 <ComplaintCard
                                     key={complaint._id}
                                     complaint={complaint}
+                                    onViewDetails={handleViewDetails}
                                     onAction={handleAction}
                                 />
                             ))}
@@ -349,6 +357,70 @@ const AdminDashboardPage = () => {
                         </Button>
                     </div>
                 </div>
+            </Modal>
+
+            {/* Details Modal */}
+            <Modal
+                isOpen={showDetailsModal}
+                onClose={() => setShowDetailsModal(false)}
+                title="Complaint Details"
+                size="lg"
+            >
+                {selectedComplaint && (
+                    <div className="space-y-4">
+                        <div>
+                            <span className={STATUS_CONFIG[selectedComplaint.status]?.bgClass}>
+                                {STATUS_CONFIG[selectedComplaint.status]?.label}
+                            </span>
+                        </div>
+
+                        <div>
+                            <h3 className="font-semibold text-lg text-gray-900">
+                                {selectedComplaint.title}
+                            </h3>
+                            <p className="text-sm text-gray-500 mt-1">
+                                Category: {selectedComplaint.category} • Department: {selectedComplaint.department}
+                            </p>
+                        </div>
+
+                        <div>
+                            <p className="text-gray-700 whitespace-pre-wrap">
+                                {selectedComplaint.description}
+                            </p>
+                        </div>
+
+                        {selectedComplaint.attachments?.length > 0 && (
+                            <div>
+                                <h4 className="font-medium text-gray-900 mb-2">Attachments</h4>
+                                <div className="space-y-1">
+                                    {selectedComplaint.attachments.map((file, idx) => (
+                                        <a
+                                            key={idx}
+                                            href={`${import.meta.env.VITE_API_URL?.replace('/api', '')}/uploads/${file.filename}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center gap-2 text-sm text-primary-600 hover:underline"
+                                        >
+                                            📎 {file.originalName}
+                                        </a>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {selectedComplaint.feedback && (
+                            <div className="bg-green-50 p-4 rounded-lg">
+                                <h4 className="font-medium text-green-900 mb-1">User Feedback</h4>
+                                <p className="text-sm text-green-700">
+                                    Rating: {selectedComplaint.feedback.rating}/10
+                                </p>
+                                <p className="text-sm text-green-700 mt-1">
+                                    {selectedComplaint.feedback.comment}
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                )}
             </Modal>
         </div>
     );
