@@ -1,2 +1,0 @@
-# This file ensures the uploads directory is tracked by git
-# while keeping the directory empty (actual uploads are ignored by .gitignore)
