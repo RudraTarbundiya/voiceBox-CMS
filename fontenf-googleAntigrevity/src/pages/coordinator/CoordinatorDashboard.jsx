@@ -3,7 +3,7 @@ import { useComplaintStore } from '../../store/useComplaintStore';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
-import { Modal } from '../../components/ui/modal';
+import { ComplaintDetailModal } from '../../components/ui/ComplaintDetailModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 
@@ -73,7 +73,7 @@ export default function CoordinatorDashboard() {
                                         </p>
                                         <div className="flex justify-end gap-2 mt-auto">
                                             <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); setSelectedComplaint(complaint); }}>
-                                                Review & Update
+                                                View Details
                                             </Button>
                                         </div>
                                     </CardContent>
@@ -90,81 +90,52 @@ export default function CoordinatorDashboard() {
                 </div>
             )}
 
-            {/* Action Modal */}
-            <Modal
+            {/* Shared Detail Modal with coordinator-specific actions */}
+            <ComplaintDetailModal
+                complaint={selectedComplaint}
                 isOpen={!!selectedComplaint}
                 onClose={() => setSelectedComplaint(null)}
-                title="Complaint Details"
-                className="max-w-2xl"
             >
-                {selectedComplaint && (
-                    <div className="space-y-6">
-                        <div>
-                            <div className="flex justify-between items-center mb-2">
-                                <h3 className="font-semibold text-lg">{selectedComplaint.title}</h3>
-                                <Badge variant={selectedComplaint.status.toLowerCase()}>{selectedComplaint.status.replace('_', ' ')}</Badge>
-                            </div>
-                            <p className="text-sm text-muted-foreground bg-muted p-4 rounded-md">
-                                {selectedComplaint.description}
-                            </p>
-                        </div>
-
-                        {selectedComplaint.attachments?.length > 0 && (
-                            <div>
-                                <h4 className="font-medium text-sm mb-2">Attachments</h4>
-                                <div className="flex gap-2">
-                                    {selectedComplaint.attachments.map((att, i) => (
-                                        <Badge key={i} variant="outline" className="cursor-pointer hover:bg-accent">
-                                            {att.originalName || att.filename}
-                                        </Badge>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Current status dictates what we can transition to */}
-                        {selectedComplaint.status === 'ASSIGNED' && (
-                            <div className="space-y-4 border-t pt-4">
-                                <p className="text-sm font-medium">Update Status: Move to In Progress</p>
-                                <textarea
-                                    className="w-full rounded-md border border-input bg-background p-3 text-sm"
-                                    placeholder="Notes on investigation..."
-                                    value={note}
-                                    onChange={(e) => setNote(e.target.value)}
-                                    rows={3}
-                                />
-                                <Button className="w-full" onClick={() => handleStatusUpdate('IN_PROGRESS')} disabled={isUpdating}>
-                                    {isUpdating ? 'Updating...' : 'Start Investigating (IN PROGRESS)'}
-                                </Button>
-                            </div>
-                        )}
-
-                        {selectedComplaint.status === 'IN_PROGRESS' && (
-                            <div className="space-y-4 border-t pt-4">
-                                <p className="text-sm font-medium">Update Status: Mark as Resolved</p>
-                                <textarea
-                                    className="w-full rounded-md border border-input bg-background p-3 text-sm"
-                                    placeholder="Details of the resolution..."
-                                    value={note}
-                                    onChange={(e) => setNote(e.target.value)}
-                                    rows={3}
-                                />
-                                <Button className="w-full bg-green-600 hover:bg-green-700" onClick={() => handleStatusUpdate('RESOLVED')} disabled={isUpdating || !note}>
-                                    {isUpdating ? 'Updating...' : 'Resolve Issue'}
-                                </Button>
-                            </div>
-                        )}
-
-                        {['RESOLVED', 'CLOSED'].includes(selectedComplaint.status) && (
-                            <div className="border-t pt-4">
-                                <p className="text-sm text-muted-foreground text-center">
-                                    This issue has been resolved. No further action needed.
-                                </p>
-                            </div>
-                        )}
+                {selectedComplaint?.status === 'ASSIGNED' && (
+                    <div className="space-y-4 border-t pt-4">
+                        <p className="text-sm font-medium">Update Status: Move to In Progress</p>
+                        <textarea
+                            className="w-full rounded-md border border-input bg-background p-3 text-sm"
+                            placeholder="Notes on investigation..."
+                            value={note}
+                            onChange={(e) => setNote(e.target.value)}
+                            rows={3}
+                        />
+                        <Button className="w-full" onClick={() => handleStatusUpdate('IN_PROGRESS')} disabled={isUpdating}>
+                            {isUpdating ? 'Updating...' : 'Start Investigating (IN PROGRESS)'}
+                        </Button>
                     </div>
                 )}
-            </Modal>
+
+                {selectedComplaint?.status === 'IN_PROGRESS' && (
+                    <div className="space-y-4 border-t pt-4">
+                        <p className="text-sm font-medium">Update Status: Mark as Resolved</p>
+                        <textarea
+                            className="w-full rounded-md border border-input bg-background p-3 text-sm"
+                            placeholder="Details of the resolution..."
+                            value={note}
+                            onChange={(e) => setNote(e.target.value)}
+                            rows={3}
+                        />
+                        <Button className="w-full bg-green-600 hover:bg-green-700" onClick={() => handleStatusUpdate('RESOLVED')} disabled={isUpdating || !note}>
+                            {isUpdating ? 'Updating...' : 'Resolve Issue'}
+                        </Button>
+                    </div>
+                )}
+
+                {['RESOLVED', 'CLOSED'].includes(selectedComplaint?.status) && (
+                    <div className="border-t pt-4">
+                        <p className="text-sm text-muted-foreground text-center">
+                            This issue has been resolved. No further action needed.
+                        </p>
+                    </div>
+                )}
+            </ComplaintDetailModal>
         </div>
     );
 }

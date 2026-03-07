@@ -42,7 +42,11 @@ const fileFilter = (req, file, cb) => {
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         'application/vnd.ms-excel',
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'text/plain'
+        'text/plain',
+        'audio/webm',
+        'audio/mpeg',
+        'audio/mp3',
+        'audio/ogg'
     ];
 
     if (allowedTypes.includes(file.mimetype)) {

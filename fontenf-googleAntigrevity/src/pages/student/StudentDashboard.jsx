@@ -1,14 +1,16 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useComplaintStore } from '../../store/useComplaintStore';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
+import { ComplaintDetailModal } from '../../components/ui/ComplaintDetailModal';
 import { FileText, PlusCircle, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 
 export default function StudentDashboard() {
     const { complaints, fetchMyComplaints, loading, error } = useComplaintStore();
+    const [selectedComplaint, setSelectedComplaint] = useState(null);
 
     useEffect(() => {
         fetchMyComplaints();
@@ -106,7 +108,7 @@ export default function StudentDashboard() {
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ duration: 0.3, delay: i * 0.1 }}
                         >
-                            <Card className="h-full flex flex-col hover:border-primary/50 transition-colors">
+                            <Card className="h-full flex flex-col hover:border-primary/50 transition-all duration-200 hover:scale-[1.01] cursor-pointer" onClick={() => setSelectedComplaint(complaint)}>
                                 <CardHeader>
                                     <div className="flex justify-between items-start gap-4">
                                         <CardTitle className="text-lg line-clamp-1">{complaint.title}</CardTitle>
@@ -117,15 +119,56 @@ export default function StudentDashboard() {
                                     </p>
                                 </CardHeader>
                                 <CardContent className="flex-1">
-                                    <p className="text-sm text-muted-foreground line-clamp-3">
+                                    <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
                                         {complaint.description}
                                     </p>
+                                    <div className="flex justify-end gap-2 mt-auto">
+                                        <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); setSelectedComplaint(complaint); }}>
+                                            View Details
+                                        </Button>
+                                    </div>
                                 </CardContent>
                             </Card>
                         </motion.div>
                     ))}
                 </div>
             )}
+
+            {/* Student detail modal - read only, no actions */}
+            <ComplaintDetailModal
+                complaint={selectedComplaint}
+                isOpen={!!selectedComplaint}
+                onClose={() => setSelectedComplaint(null)}
+            >
+                {selectedComplaint?.status === 'NEW' && (
+                    <div className="border-t pt-4">
+                        <p className="text-sm text-muted-foreground text-center">
+                            Your complaint has been submitted and is awaiting admin review.
+                        </p>
+                    </div>
+                )}
+                {['ASSIGNED', 'IN_PROGRESS'].includes(selectedComplaint?.status) && (
+                    <div className="border-t pt-4">
+                        <p className="text-sm text-muted-foreground text-center">
+                            Your complaint is being handled by the {selectedComplaint?.assignedDepartment || ''} department.
+                        </p>
+                    </div>
+                )}
+                {selectedComplaint?.status === 'RESOLVED' && (
+                    <div className="border-t pt-4">
+                        <p className="text-sm text-green-500 text-center font-medium">
+                            ✅ Your complaint has been resolved! You can provide feedback from the complaint page.
+                        </p>
+                    </div>
+                )}
+                {selectedComplaint?.status === 'CLOSED' && (
+                    <div className="border-t pt-4">
+                        <p className="text-sm text-muted-foreground text-center">
+                            This complaint is closed.
+                        </p>
+                    </div>
+                )}
+            </ComplaintDetailModal>
         </div>
     );
 }

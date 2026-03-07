@@ -3,7 +3,7 @@ import { useComplaintStore } from '../../store/useComplaintStore';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
-import { Modal } from '../../components/ui/modal';
+import { ComplaintDetailModal } from '../../components/ui/ComplaintDetailModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 
@@ -13,8 +13,6 @@ export default function AdminDashboard() {
     const [isUpdating, setIsUpdating] = useState(false);
     const [department, setDepartment] = useState('CE');
     const [note, setNote] = useState('');
-
-    // Local filter
     const [filter, setFilter] = useState('ALL');
 
     useEffect(() => {
@@ -161,7 +159,7 @@ export default function AdminDashboard() {
                                         </p>
                                         <div className="flex justify-end gap-2 mt-auto">
                                             <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); setSelectedComplaint(complaint); }}>
-                                                Take Action
+                                                View Details
                                             </Button>
                                         </div>
                                     </CardContent>
@@ -178,100 +176,79 @@ export default function AdminDashboard() {
                 </div>
             )}
 
-            {/* Action Modal */}
-            <Modal
+            {/* Shared Detail Modal with admin-specific actions */}
+            <ComplaintDetailModal
+                complaint={selectedComplaint}
                 isOpen={!!selectedComplaint}
                 onClose={() => setSelectedComplaint(null)}
-                title="Administrative Controls"
-                className="max-w-2xl"
             >
-                {selectedComplaint && (
-                    <div className="space-y-6">
-                        <div>
-                            <div className="flex justify-between items-center mb-2">
-                                <h3 className="font-semibold text-lg">{selectedComplaint.title}</h3>
-                                <Badge variant={selectedComplaint.status.toLowerCase()}>{selectedComplaint.status.replace('_', ' ')}</Badge>
-                            </div>
-                            <p className="text-sm text-muted-foreground bg-muted p-4 rounded-md">
-                                {selectedComplaint.description}
-                            </p>
-                        </div>
-
-                        {/* If NEW: Assign Department */}
-                        {selectedComplaint.status === 'NEW' && (
-                            <div className="space-y-4 border-t pt-4">
-                                <p className="text-sm font-medium">Route to Department</p>
-                                <div className="flex gap-4">
-                                    <select
-                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                        value={department}
-                                        onChange={(e) => setDepartment(e.target.value)}
-                                    >
-                                        <option value="CE">Computer Engineering</option>
-                                        <option value="IT">Information Technology</option>
-                                        <option value="EC">Electronics & Communication</option>
-                                    </select>
-                                </div>
-                                <textarea
-                                    className="w-full rounded-md border border-input bg-background p-3 text-sm"
-                                    placeholder="Notes for the coordinator..."
-                                    value={note}
-                                    onChange={(e) => setNote(e.target.value)}
-                                    rows={2}
-                                />
-                                <Button className="w-full bg-blue-600 hover:bg-blue-700" onClick={handleAssignment} disabled={isUpdating}>
-                                    {isUpdating ? 'Assigning...' : `Assign to ${department}`}
-                                </Button>
-                            </div>
-                        )}
-
-                        {/* If RESOLVED: Close Complaint */}
-                        {selectedComplaint.status === 'RESOLVED' && (
-                            <div className="space-y-4 border-t pt-4">
-                                <p className="text-sm font-medium">Close System Record</p>
-
-                                {selectedComplaint.feedback ? (
-                                    <div className="bg-primary/10 border-l-4 border-primary p-4 rounded-r-md">
-                                        <p className="text-sm font-semibold mb-1">User Feedback (Rating: {selectedComplaint.feedback.rating}/10)</p>
-                                        <p className="text-sm text-muted-foreground">"{selectedComplaint.feedback.comment}"</p>
-                                    </div>
-                                ) : (
-                                    <div className="bg-yellow-500/10 border-l-4 border-yellow-500 p-3 rounded-r-md">
-                                        <p className="text-sm text-yellow-700 dark:text-yellow-500">No user feedback yet. Proceed with manual closure?</p>
-                                    </div>
-                                )}
-
-                                <textarea
-                                    className="w-full rounded-md border border-input bg-background p-3 text-sm mt-4"
-                                    placeholder="Closing notes..."
-                                    value={note}
-                                    onChange={(e) => setNote(e.target.value)}
-                                    rows={2}
-                                />
-                                <Button className="w-full bg-gray-600 hover:bg-gray-700" onClick={handleClose} disabled={isUpdating || !note}>
-                                    {isUpdating ? 'Closing...' : 'Close Complaint'}
-                                </Button>
-                            </div>
-                        )}
-
-                        {['ASSIGNED', 'IN_PROGRESS'].includes(selectedComplaint.status) && (
-                            <div className="border-t pt-4">
-                                <p className="text-sm text-muted-foreground text-center">
-                                    This issue is currently being resolved by a coordinator.
-                                </p>
-                            </div>
-                        )}
-
-                        {selectedComplaint.status === 'CLOSED' && (
-                            <div className="border-t pt-4">
-                                <p className="text-sm text-muted-foreground text-center">
-                                    This issue is sealed and marked permanently as CLOSED.
-                                </p>
-                            </div>
-                        )}
+                {selectedComplaint?.status === 'NEW' && (
+                    <div className="space-y-4 border-t pt-4">
+                        <p className="text-sm font-medium">Route to Department</p>
+                        <select
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            value={department}
+                            onChange={(e) => setDepartment(e.target.value)}
+                        >
+                            <option value="CE">Computer Engineering</option>
+                            <option value="IT">Information Technology</option>
+                            <option value="EC">Electronics & Communication</option>
+                        </select>
+                        <textarea
+                            className="w-full rounded-md border border-input bg-background p-3 text-sm"
+                            placeholder="Notes for the coordinator..."
+                            value={note}
+                            onChange={(e) => setNote(e.target.value)}
+                            rows={2}
+                        />
+                        <Button className="w-full bg-blue-600 hover:bg-blue-700" onClick={handleAssignment} disabled={isUpdating}>
+                            {isUpdating ? 'Assigning...' : `Assign to ${department}`}
+                        </Button>
                     </div>
                 )}
-            </Modal>
+
+                {selectedComplaint?.status === 'RESOLVED' && (
+                    <div className="space-y-4 border-t pt-4">
+                        <p className="text-sm font-medium">Close System Record</p>
+                        {selectedComplaint.feedback ? (
+                            <div className="bg-primary/10 border-l-4 border-primary p-4 rounded-r-md">
+                                <p className="text-sm font-semibold mb-1">User Feedback (Rating: {selectedComplaint.feedback.rating}/10)</p>
+                                <p className="text-sm text-muted-foreground">"{selectedComplaint.feedback.comment}"</p>
+                            </div>
+                        ) : (
+                            <div className="bg-yellow-500/10 border-l-4 border-yellow-500 p-3 rounded-r-md">
+                                <p className="text-sm text-yellow-700 dark:text-yellow-500">No user feedback yet. Proceed with manual closure?</p>
+                            </div>
+                        )}
+                        <textarea
+                            className="w-full rounded-md border border-input bg-background p-3 text-sm"
+                            placeholder="Closing notes..."
+                            value={note}
+                            onChange={(e) => setNote(e.target.value)}
+                            rows={2}
+                        />
+                        <Button className="w-full bg-gray-600 hover:bg-gray-700" onClick={handleClose} disabled={isUpdating || !note}>
+                            {isUpdating ? 'Closing...' : 'Close Complaint'}
+                        </Button>
+                    </div>
+                )}
+
+                {['ASSIGNED', 'IN_PROGRESS'].includes(selectedComplaint?.status) && (
+                    <div className="border-t pt-4">
+                        <p className="text-sm text-muted-foreground text-center">
+                            This issue is currently being resolved by a coordinator.
+                        </p>
+                    </div>
+                )}
+
+                {selectedComplaint?.status === 'CLOSED' && (
+                    <div className="border-t pt-4">
+                        <p className="text-sm text-muted-foreground text-center">
+                            This issue is sealed and marked permanently as CLOSED.
+                        </p>
+                    </div>
+                )}
+            </ComplaintDetailModal>
         </div>
     );
 }
