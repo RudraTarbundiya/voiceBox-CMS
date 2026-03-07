@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
 import { useAuth } from '../../context/AuthContext';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, Navigate } from 'react-router-dom';
 import GoogleLoginButton from '../../components/auth/GoogleLoginButton';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 
 export default function Register() {
-    const { register } = useAuth();
+    const { register, user, loading } = useAuth();
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
         name: '',
@@ -19,11 +19,25 @@ export default function Register() {
         role: 'student'
     });
     const [error, setError] = useState(null);
-    const [loading, setLoading] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // If already logged in, redirect to dashboard based on role
+    useEffect(() => {
+        if (!loading && user) {
+            toast('You are already logged in!', { icon: 'ℹ️' });
+            if (user.role === 'admin') {
+                navigate('/admin', { replace: true });
+            } else if (user.role === 'coordinator') {
+                navigate('/coordinator', { replace: true });
+            } else {
+                navigate('/dashboard', { replace: true });
+            }
+        }
+    }, [user, loading, navigate]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setLoading(true);
+        setIsSubmitting(true);
         setError(null);
         try {
             await register(formData);
@@ -33,7 +47,7 @@ export default function Register() {
             toast.error(err.response?.data?.message || 'Registration failed');
             setError(err.response?.data?.message || 'Registration failed');
         } finally {
-            setLoading(false);
+            setIsSubmitting(false);
         }
     };
 
@@ -130,8 +144,8 @@ export default function Register() {
 
                             {error && <p className="text-sm text-destructive">{error}</p>}
 
-                            <Button type="submit" className="w-full h-11" disabled={loading}>
-                                {loading ? 'Creating account...' : 'Create Account'}
+                            <Button type="submit" className="w-full h-11" disabled={isSubmitting}>
+                                {isSubmitting ? 'Creating account...' : 'Create Account'}
                             </Button>
                         </form>
                     </CardContent>
