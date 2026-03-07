@@ -5,6 +5,7 @@ import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { Modal } from '../../components/ui/modal';
 import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
 
 export default function AdminDashboard() {
     const { complaints, fetchAllComplaints, updateComplaintStatus, loading, stats, fetchStats } = useComplaintStore();
@@ -26,9 +27,11 @@ export default function AdminDashboard() {
         setIsUpdating(true);
         try {
             await updateComplaintStatus(selectedComplaint._id, { department, note });
+            toast.success(`Complaint assigned to ${department} department`);
             setSelectedComplaint(null);
             setNote('');
         } catch (err) {
+            toast.error('Failed to assign complaint');
             console.error(err);
         } finally {
             setIsUpdating(false);
@@ -40,9 +43,11 @@ export default function AdminDashboard() {
         setIsUpdating(true);
         try {
             await updateComplaintStatus(selectedComplaint._id, { status: "CLOSED", note });
+            toast.success('Complaint closed successfully');
             setSelectedComplaint(null);
             setNote('');
         } catch (err) {
+            toast.error('Failed to close complaint');
             console.error(err);
         } finally {
             setIsUpdating(false);
@@ -135,7 +140,7 @@ export default function AdminDashboard() {
                                 exit={{ opacity: 0, scale: 0.95 }}
                                 transition={{ duration: 0.3, delay: i * 0.05 }}
                             >
-                                <Card className="h-full flex flex-col hover:border-primary/50 transition-colors cursor-pointer" onClick={() => setSelectedComplaint(complaint)}>
+                                <Card className="h-full flex flex-col hover:border-primary/50 transition-all duration-200 hover:scale-[1.01] cursor-pointer" onClick={() => setSelectedComplaint(complaint)}>
                                     <CardHeader className="pb-3 border-b">
                                         <div className="flex justify-between items-start gap-4">
                                             <CardTitle className="text-base line-clamp-1">{complaint.title}</CardTitle>

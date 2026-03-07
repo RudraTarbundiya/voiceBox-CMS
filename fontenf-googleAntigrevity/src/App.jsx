@@ -13,6 +13,7 @@ const StudentDashboard = lazy(() => import('./pages/student/StudentDashboard'));
 const SubmitComplaint = lazy(() => import('./pages/student/SubmitComplaint'));
 
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
+const ManageUsers = lazy(() => import('./pages/admin/ManageUsers'));
 const CoordinatorDashboard = lazy(() => import('./pages/coordinator/CoordinatorDashboard'));
 
 import { LoadingAnimation } from './components/ui/LoadingAnimation';
@@ -76,7 +77,7 @@ function App() {
               path="/admin/users"
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
-                  <div className="p-8"><h1 className="text-3xl font-bold">User Management</h1><p>Coming Soon</p></div>
+                  <ManageUsers />
                 </ProtectedRoute>
               }
             />

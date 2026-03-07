@@ -58,8 +58,17 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const logoutAll = async () => {
+        try {
+            const res = await api.post('/auth/logout-all');
+            return res.data;
+        } finally {
+            setUser(null);
+        }
+    };
+
     return (
-        <AuthContext.Provider value={{ user, setUser, loading, login, register, logout, checkAuth }}>
+        <AuthContext.Provider value={{ user, setUser, loading, login, register, logout, logoutAll, checkAuth }}>
             {children}
         </AuthContext.Provider>
     );

@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { Sun, Moon, Mic, LogOut, Menu, X, Home, FileText, Settings, Users } from 'lucide-react';
+import { Sun, Moon, Mic, LogOut, MonitorOff, Menu, X, Home, FileText, Settings, Users } from 'lucide-react';
 import { Button } from '../ui/button';
 import { cn } from '../../utils/cn';
+import toast from 'react-hot-toast';
 
 export default function DashboardLayout() {
-    const { user, logout } = useAuth();
+    const { user, logout, logoutAll } = useAuth();
     const { theme, setTheme } = useTheme();
     const navigate = useNavigate();
     const location = useLocation();
@@ -15,6 +16,17 @@ export default function DashboardLayout() {
 
     const handleLogout = async () => {
         await logout();
+        toast.success('Logged out successfully');
+        navigate('/login');
+    };
+
+    const handleLogoutAll = async () => {
+        try {
+            const data = await logoutAll();
+            toast.success(data?.message || 'Logged out from all devices');
+        } catch {
+            toast.success('Logged out from all devices');
+        }
         navigate('/login');
     };
 
@@ -72,7 +84,7 @@ export default function DashboardLayout() {
                     <nav className="space-y-1 p-4">
                         {filteredLinks.map((link) => {
                             const Icon = link.icon;
-                            const isActive = location.pathname === link.href || location.pathname.startsWith(`${link.href}/`);
+                            const isActive = location.pathname === link.href;
 
                             return (
                                 <Link
@@ -80,7 +92,7 @@ export default function DashboardLayout() {
                                     to={link.href}
                                     onClick={() => setSidebarOpen(false)}
                                     className={cn(
-                                        "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+                                        "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-all duration-200 hover:scale-[1.02] cursor-pointer",
                                         isActive
                                             ? "bg-primary/10 text-primary font-medium"
                                             : "hover:bg-muted text-muted-foreground hover:text-foreground"
@@ -100,10 +112,16 @@ export default function DashboardLayout() {
                                 <p className="truncate text-xs">{user?.email}</p>
                             </div>
                         </div>
-                        <Button variant="ghost" className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10" onClick={handleLogout}>
-                            <LogOut className="mr-2 h-4 w-4" />
-                            Logout
-                        </Button>
+                        <div className="space-y-1">
+                            <Button variant="ghost" className="w-full justify-start text-red-500 hover:text-red-400 hover:bg-red-500/10 cursor-pointer" onClick={handleLogout}>
+                                <LogOut className="mr-2 h-4 w-4" />
+                                Logout
+                            </Button>
+                            <Button variant="ghost" className="w-full justify-start text-orange-500 hover:text-orange-400 hover:bg-orange-500/10 cursor-pointer" onClick={handleLogoutAll}>
+                                <MonitorOff className="mr-2 h-4 w-4" />
+                                Logout All Devices
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </aside>

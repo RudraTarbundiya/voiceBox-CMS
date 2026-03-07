@@ -14,7 +14,9 @@ import {
     promoteFacultyToCoordinator,
     getFacultyList,
     getCoordinatorList,
-    getAdminStats
+    getAdminStats,
+    getAllUsers,
+    forceLogoutUser
 } from '../controllers/adminController.js';
 import { authenticate } from '../middleware/authMiddleware.js';
 import { requireAdmin } from '../middleware/roleMiddleware.js';
@@ -29,9 +31,11 @@ router.use(requireAdmin);
 router.get('/stats', getAdminStats);
 
 // User management
+router.get('/users', getAllUsers);
 router.get('/users/faculty', getFacultyList);
 router.get('/users/coordinators', getCoordinatorList);
 router.patch('/users/:id/promote', promoteFacultyToCoordinator);
+router.delete('/users/:id/sessions', forceLogoutUser);
 
 // Complaint management
 router.patch('/complaints/:id/assign', assignDepartment);

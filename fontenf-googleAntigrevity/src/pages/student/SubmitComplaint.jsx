@@ -6,6 +6,7 @@ import { useComplaintStore } from '../../store/useComplaintStore';
 import { useNavigate } from 'react-router-dom';
 import { Mic, UploadCloud, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
 
 export default function SubmitComplaint() {
     const { createComplaint, loading, error } = useComplaintStore();
@@ -49,9 +50,10 @@ export default function SubmitComplaint() {
 
         try {
             await createComplaint(data);
+            toast.success('Complaint submitted successfully!');
             navigate('/dashboard');
         } catch (err) {
-            // Error is handled in store
+            toast.error('Failed to submit complaint');
         }
     };
 

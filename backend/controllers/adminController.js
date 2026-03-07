@@ -9,6 +9,7 @@
 
 import User from '../models/User.js';
 import Complaint from '../models/Complaint.js';
+import Session from '../models/Session.js';
 
 /**
  * Assign department to a complaint
@@ -250,6 +251,82 @@ export const getCoordinatorList = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Server error while fetching coordinator list'
+        });
+    }
+};
+
+/**
+ * Get all users (for admin user management)
+ * GET /api/admin/users
+ * Allowed: admin only
+ */
+export const getAllUsers = async (req, res) => {
+    try {
+        const { department, role } = req.query;
+
+        const filter = {};
+        if (department) filter.department = department;
+        if (role) filter.role = role;
+
+        const users = await User.find(filter)
+            .select('name email department role createdAt')
+            .sort({ role: 1, department: 1, name: 1 });
+
+        res.json({
+            success: true,
+            count: users.length,
+            users
+        });
+
+    } catch (error) {
+        console.error('Get All Users Error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error while fetching users'
+        });
+    }
+};
+
+/**
+ * Force logout a user by deleting all their sessions
+ * DELETE /api/admin/users/:id/sessions
+ * Allowed: admin only
+ */
+export const forceLogoutUser = async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        // Don't allow admin to force-logout themselves
+        if (user._id.toString() === req.user._id.toString()) {
+            return res.status(400).json({
+                success: false,
+                message: 'Cannot force logout yourself. Use the regular logout instead.'
+            });
+        }
+
+        // Delete all sessions for this user
+        const result = await Session.deleteMany({ userId: user._id });
+
+        console.log(`🚪 Admin force-logged out user ${user.email} (${result.deletedCount} sessions deleted)`);
+
+        res.json({
+            success: true,
+            message: `${user.name} logged out from ${result.deletedCount} device(s)`,
+            deletedSessions: result.deletedCount
+        });
+
+    } catch (error) {
+        console.error('Force Logout Error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error while force logging out user'
         });
     }
 };

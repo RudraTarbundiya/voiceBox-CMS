@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import GoogleLoginButton from '../../components/auth/GoogleLoginButton';
 import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
 
 export default function Login() {
     const { login } = useAuth();
@@ -20,8 +21,10 @@ export default function Login() {
         setError(null);
         try {
             await login(formData);
-            navigate('/dashboard'); // Protected route wrapper will redirect to admin/coordinator automatically if needed
+            toast.success('Login successful! Welcome back.');
+            navigate('/dashboard');
         } catch (err) {
+            toast.error(err.response?.data?.message || 'Invalid credentials');
             setError(err.response?.data?.message || 'Invalid credentials');
         } finally {
             setLoading(false);

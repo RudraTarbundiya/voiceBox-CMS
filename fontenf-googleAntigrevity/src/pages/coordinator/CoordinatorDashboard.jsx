@@ -5,6 +5,7 @@ import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { Modal } from '../../components/ui/modal';
 import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
 
 export default function CoordinatorDashboard() {
     const { complaints, fetchDepartmentComplaints, updateComplaintStatus, loading } = useComplaintStore();
@@ -21,9 +22,11 @@ export default function CoordinatorDashboard() {
         setIsUpdating(true);
         try {
             await updateComplaintStatus(selectedComplaint._id, { status, note });
+            toast.success(`Complaint status updated to ${status.replace('_', ' ')}`);
             setSelectedComplaint(null);
             setNote('');
         } catch (err) {
+            toast.error('Failed to update status');
             console.error(err);
         } finally {
             setIsUpdating(false);

@@ -20,7 +20,7 @@ export const Button = forwardRef(({ className, variant = "default", size = "defa
         <button
             ref={ref}
             className={cn(
-                "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
+                "inline-flex items-center justify-center rounded-md text-sm font-medium cursor-pointer transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
                 variants[variant],
                 sizes[size],
                 className

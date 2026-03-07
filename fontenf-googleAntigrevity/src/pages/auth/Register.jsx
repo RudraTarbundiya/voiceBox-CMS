@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import GoogleLoginButton from '../../components/auth/GoogleLoginButton';
 import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
 
 export default function Register() {
     const { register } = useAuth();
@@ -26,8 +27,10 @@ export default function Register() {
         setError(null);
         try {
             await register(formData);
+            toast.success('Account created successfully!');
             navigate('/dashboard');
         } catch (err) {
+            toast.error(err.response?.data?.message || 'Registration failed');
             setError(err.response?.data?.message || 'Registration failed');
         } finally {
             setLoading(false);
