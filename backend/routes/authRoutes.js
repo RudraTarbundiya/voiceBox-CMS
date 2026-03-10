@@ -13,13 +13,19 @@ import {
     googleAuth
 } from '../controllers/authController.js';
 import { authenticate } from '../middleware/authMiddleware.js';
+import { validateRequest } from '../middleware/validateMiddleware.js';
+import {
+    registerSchema,
+    loginSchema,
+    googleAuthSchema
+} from '../validators/schemas.js';
 
 const router = express.Router();
 
 // Public routes
-router.post('/register', register);
-router.post('/login', login);
-router.post('/google', googleAuth);
+router.post('/register', validateRequest({ body: registerSchema }), register);
+router.post('/login', validateRequest({ body: loginSchema }), login);
+router.post('/google', validateRequest({ body: googleAuthSchema }), googleAuth);
 
 // Protected routes (require authentication)
 router.post('/logout', authenticate, logout);

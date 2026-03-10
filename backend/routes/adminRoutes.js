@@ -20,6 +20,14 @@ import {
 } from '../controllers/adminController.js';
 import { authenticate } from '../middleware/authMiddleware.js';
 import { requireAdmin } from '../middleware/roleMiddleware.js';
+import { validateRequest } from '../middleware/validateMiddleware.js';
+import {
+    objectIdParamSchema,
+    adminAssignDepartmentSchema,
+    adminCloseComplaintSchema,
+    adminUserFilterQuerySchema,
+    adminFacultyFilterQuerySchema
+} from '../validators/schemas.js';
 
 const router = express.Router();
 
@@ -31,14 +39,14 @@ router.use(requireAdmin);
 router.get('/stats', getAdminStats);
 
 // User management
-router.get('/users', getAllUsers);
-router.get('/users/faculty', getFacultyList);
+router.get('/users', validateRequest({ query: adminUserFilterQuerySchema }), getAllUsers);
+router.get('/users/faculty', validateRequest({ query: adminFacultyFilterQuerySchema }), getFacultyList);
 router.get('/users/coordinators', getCoordinatorList);
-router.patch('/users/:id/promote', promoteFacultyToCoordinator);
-router.delete('/users/:id/sessions', forceLogoutUser);
+router.patch('/users/:id/promote', validateRequest({ params: objectIdParamSchema }), promoteFacultyToCoordinator);
+router.delete('/users/:id/sessions', validateRequest({ params: objectIdParamSchema }), forceLogoutUser);
 
 // Complaint management
-router.patch('/complaints/:id/assign', assignDepartment);
-router.patch('/complaints/:id/close', closeComplaint);
+router.patch('/complaints/:id/assign', validateRequest({ params: objectIdParamSchema, body: adminAssignDepartmentSchema }), assignDepartment);
+router.patch('/complaints/:id/close', validateRequest({ params: objectIdParamSchema, body: adminCloseComplaintSchema }), closeComplaint);
 
 export default router;

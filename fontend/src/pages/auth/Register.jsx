@@ -7,6 +7,7 @@ import { Link, useNavigate, Navigate } from 'react-router-dom';
 import GoogleLoginButton from '../../components/auth/GoogleLoginButton';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
+import { sanitizePayload } from '../../utils/sanitize';
 
 export default function Register() {
     const { register, user, loading } = useAuth();
@@ -40,7 +41,7 @@ export default function Register() {
         setIsSubmitting(true);
         setError(null);
         try {
-            await register(formData);
+            await register(sanitizePayload(formData));
             toast.success('Account created successfully!');
             navigate('/dashboard');
         } catch (err) {

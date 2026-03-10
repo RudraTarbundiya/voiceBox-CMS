@@ -7,6 +7,7 @@ import { Link, useNavigate, Navigate } from 'react-router-dom';
 import GoogleLoginButton from '../../components/auth/GoogleLoginButton';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
+import { sanitizePayload } from '../../utils/sanitize';
 
 export default function Login() {
     const { login, user, loading } = useAuth();
@@ -34,7 +35,7 @@ export default function Login() {
         setIsSubmitting(true);
         setError(null);
         try {
-            await login(formData);
+            await login(sanitizePayload(formData));
             toast.success('Login successful! Welcome back.');
             navigate('/dashboard');
         } catch (err) {

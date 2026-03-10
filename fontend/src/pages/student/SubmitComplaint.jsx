@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { Mic, MicOff, UploadCloud, X, Play, Pause, Square, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
+import { sanitizeText } from '../../utils/sanitize';
 
 export default function SubmitComplaint() {
     const { createComplaint, loading, error } = useComplaintStore();
@@ -135,9 +136,12 @@ export default function SubmitComplaint() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        const safeTitle = sanitizeText(formData.title);
+        const safeDescription = sanitizeText(formData.description);
+
         const data = new FormData();
-        data.append('title', formData.title);
-        data.append('description', formData.description);
+        data.append('title', safeTitle);
+        data.append('description', safeDescription);
         data.append('category', formData.category);
         files.forEach(file => data.append('attachments', file));
 

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import api from "../api/axios.js";
+import { sanitizePayload } from '../utils/sanitize.js';
 
 // Creating context
 const AuthContext = createContext({
@@ -35,7 +36,8 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     const login = async (credentials) => {
-        const res = await api.post('/auth/login', credentials);
+        const safeCredentials = sanitizePayload(credentials);
+        const res = await api.post('/auth/login', safeCredentials);
         if (res.data.success) {
             setUser(res.data.user);
         }
@@ -43,7 +45,8 @@ export const AuthProvider = ({ children }) => {
     };
 
     const register = async (userData) => {
-        const res = await api.post('/auth/register', userData);
+        const safeUserData = sanitizePayload(userData);
+        const res = await api.post('/auth/register', safeUserData);
         if (res.data.success) {
             setUser(res.data.user);
         }

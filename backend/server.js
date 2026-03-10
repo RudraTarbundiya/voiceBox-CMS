@@ -14,6 +14,8 @@ import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import helmet from 'helmet';
+import mongoSanitize from 'express-mongo-sanitize';
 
 // Load environment variables
 dotenv.config();
@@ -25,6 +27,7 @@ import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import complaintRoutes from './routes/complaintRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+import { sanitizeRequestData } from './middleware/sanitizeMiddleware.js';
 
 // Initialize express app
 const app = express();
@@ -39,11 +42,32 @@ connectDB();
 // ==================== MIDDLEWARE ====================
 
 // CORS configuration - allow frontend with credentials
+const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+
 app.use(cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: frontendUrl,
     credentials: true, // Allow cookies to be sent
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Security headers + CSP to reduce XSS and data injection risks
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            baseUri: ["'self'"],
+            objectSrc: ["'none'"],
+            frameAncestors: ["'none'"],
+            formAction: ["'self'"],
+            connectSrc: ["'self'", frontendUrl],
+            scriptSrc: ["'self'"],
+            styleSrc: ["'self'", "'unsafe-inline'"],
+            imgSrc: ["'self'", 'data:', 'blob:'],
+            fontSrc: ["'self'", 'data:']
+        }
+    }
 }));
 
 // Parse JSON bodies
@@ -51,6 +75,12 @@ app.use(express.json({ limit: '10mb' }));
 
 // Parse URL-encoded bodies
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Prevent MongoDB operator injection payloads like $ne and $gt.
+app.use(mongoSanitize({ replaceWith: '_' }));
+
+// Strip HTML/script payloads from request data.
+app.use(sanitizeRequestData);
 
 // Cookie parser with secret for signed cookies
 app.use(cookieParser(process.env.COOKIE_SECRET || 'your_super_secret_cookie_key'));

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import api from '../api/axios';
+import { sanitizePayload } from '../utils/sanitize.js';
 
 export const useComplaintStore = create((set, get) => ({
     complaints: [],
@@ -75,13 +76,15 @@ export const useComplaintStore = create((set, get) => ({
     updateComplaintStatus: async (id, statusData) => {
         set({ loading: true, error: null });
         try {
-            const endpoint = statusData.department
+            const safeStatusData = sanitizePayload(statusData);
+
+            const endpoint = safeStatusData.department
                 ? `/admin/complaints/${id}/assign` // Admin assigning
-                : statusData.note && statusData.status === 'CLOSED'
+                : safeStatusData.note && safeStatusData.status === 'CLOSED'
                     ? `/admin/complaints/${id}/close`  // Admin closing
                     : `/complaints/${id}/status`;      // Coordinator updating status
 
-            const res = await api.patch(endpoint, statusData);
+            const res = await api.patch(endpoint, safeStatusData);
             set((state) => ({
                 complaints: state.complaints.map(c => c._id === id ? { ...c, ...res.data.complaint } : c),
                 currentComplaint: state.currentComplaint?._id === id ? res.data.complaint : state.currentComplaint,
@@ -97,9 +100,10 @@ export const useComplaintStore = create((set, get) => ({
     submitFeedback: async (id, feedbackData) => {
         set({ loading: true, error: null });
         try {
-            const res = await api.post(`/complaints/${id}/feedback`, feedbackData);
+            const safeFeedbackData = sanitizePayload(feedbackData);
+            const res = await api.post(`/complaints/${id}/feedback`, safeFeedbackData);
             set((state) => ({
-                currentComplaint: state.currentComplaint?._id === id ? { ...state.currentComplaint, feedback: feedbackData } : state.currentComplaint,
+                currentComplaint: state.currentComplaint?._id === id ? { ...state.currentComplaint, feedback: safeFeedbackData } : state.currentComplaint,
                 loading: false
             }));
             return res.data;
