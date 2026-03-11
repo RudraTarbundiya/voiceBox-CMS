@@ -41,33 +41,7 @@ export const authenticate = async (req, res, next) => {
         next();
     } catch (error) {
         console.error('Auth Middleware Error:', error);
-        return res.status(500).json({
-            success: false,
-            message: 'Authentication error'
-        });
-    }
-};
-
-/**
- * Optional authentication middleware
- * Attaches user if session exists, but doesn't block if not
- */
-export const optionalAuth = async (req, res, next) => {
-    try {
-        const sessionId = req.signedCookies.sessionId;
-
-        if (sessionId) {
-            const session = await Session.validateSession(sessionId);
-            if (session && session.userId) {
-                req.user = session.userId;
-                req.sessionId = sessionId;
-            }
-        }
-
-        next();
-    } catch (error) {
-        // Continue without user
-        next();
+        next(error);
     }
 };
 

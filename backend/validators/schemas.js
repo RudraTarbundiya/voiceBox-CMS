@@ -3,6 +3,7 @@ import { z } from 'zod';
 const objectIdRegex = /^[a-f\d]{24}$/i;
 const noPathTraversalRegex = /^[^\\/]+$/;
 
+const emailDomain = process.env.EMAIL_DOMAIN || '@ldce.ac.in';
 const departments = ['CE', 'IT', 'EC'];
 const userRoles = ['student', 'faculty', 'coordinator', 'admin'];
 const selfRegisterRoles = ['student', 'faculty'];
@@ -13,6 +14,12 @@ export const objectIdParamSchema = z.object({
     id: z.string().regex(objectIdRegex, 'Invalid resource id')
 });
 
+export const sendOtpSchema = z.object({
+    email: z.string().trim().email().refine(v => v.toLowerCase().endsWith(emailDomain), {
+        message: `Only ${emailDomain} email addresses are allowed`
+    })
+});
+
 export const attachmentParamSchema = objectIdParamSchema.extend({
     filename: z.string()
         .min(1, 'Filename is required')
@@ -21,14 +28,19 @@ export const attachmentParamSchema = objectIdParamSchema.extend({
 
 export const registerSchema = z.object({
     name: z.string().trim().min(2).max(100),
-    email: z.string().trim().email(),
+    email: z.string().trim().email().refine(v => v.toLowerCase().endsWith(emailDomain), {
+        message: `Only ${emailDomain} email addresses are allowed`
+    }),
     password: z.string().min(6).max(128),
     role: z.enum(selfRegisterRoles).optional(),
-    department: z.enum(departments)
+    department: z.enum(departments),
+    otp: z.string().length(4, 'OTP must be exactly 4 digits')
 });
 
 export const loginSchema = z.object({
-    email: z.string().trim().email(),
+    email: z.string().trim().email().refine(v => v.toLowerCase().endsWith(emailDomain), {
+        message: `Only ${emailDomain} email addresses are allowed`
+    }),
     password: z.string().min(1, 'Password is required')
 });
 

@@ -13,7 +13,7 @@ import path from 'path';
  * POST /api/complaints
  * Allowed: student, faculty
  */
-export const createComplaint = async (req, res) => {
+export const createComplaint = async (req, res ,next) => {
     try {
         const { title, description, category } = req.body;
 
@@ -90,10 +90,7 @@ export const createComplaint = async (req, res) => {
             });
         }
 
-        res.status(500).json({
-            success: false,
-            message: 'Server error while creating complaint'
-        });
+        next(error);
     }
 };
 
@@ -102,7 +99,7 @@ export const createComplaint = async (req, res) => {
  * GET /api/complaints/my
  * Allowed: all authenticated users
  */
-export const getMyComplaints = async (req, res) => {
+export const getMyComplaints = async (req, res, next) => {
     try {
         const complaints = await Complaint.find({ createdBy: req.user._id })
             .populate('createdBy', 'name email department')
@@ -116,10 +113,7 @@ export const getMyComplaints = async (req, res) => {
 
     } catch (error) {
         console.error('Get My Complaints Error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Server error while fetching complaints'
-        });
+        next(error);
     }
 };
 
@@ -128,7 +122,7 @@ export const getMyComplaints = async (req, res) => {
  * GET /api/complaints/all
  * Allowed: admin
  */
-export const getAllComplaints = async (req, res) => {
+export const getAllComplaints = async (req, res, next) => {
     try {
         const { status, category, department, page = 1, limit = 20 } = req.query;
 
@@ -157,10 +151,7 @@ export const getAllComplaints = async (req, res) => {
 
     } catch (error) {
         console.error('Get All Complaints Error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Server error while fetching complaints'
-        });
+        next(error);
     }
 };
 
@@ -169,7 +160,7 @@ export const getAllComplaints = async (req, res) => {
  * GET /api/complaints/department
  * Allowed: coordinator
  */
-export const getDepartmentComplaints = async (req, res) => {
+export const getDepartmentComplaints = async (req, res, next) => {
     try {
         const { status, page = 1, limit = 20 } = req.query;
 
@@ -196,10 +187,7 @@ export const getDepartmentComplaints = async (req, res) => {
 
     } catch (error) {
         console.error('Get Department Complaints Error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Server error while fetching complaints'
-        });
+        next(error);
     }
 };
 
@@ -208,7 +196,7 @@ export const getDepartmentComplaints = async (req, res) => {
  * GET /api/complaints/:id
  * Allowed: owner, coordinator (same dept), admin
  */
-export const getComplaintById = async (req, res) => {
+export const getComplaintById = async (req, res, next) => {
     try {
         const complaint = await Complaint.findById(req.params.id)
             .populate('createdBy', 'name email department')
@@ -241,10 +229,7 @@ export const getComplaintById = async (req, res) => {
 
     } catch (error) {
         console.error('Get Complaint By ID Error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Server error while fetching complaint'
-        });
+        next(error);    
     }
 };
 
@@ -254,7 +239,7 @@ export const getComplaintById = async (req, res) => {
  * Allowed: coordinator (same dept)
  * Valid transitions: ASSIGNED → IN_PROGRESS → RESOLVED
  */
-export const updateComplaintStatus = async (req, res) => {
+export const updateComplaintStatus = async (req, res ,next) => {
     try {
         const { status, note } = req.body;
 
@@ -319,10 +304,7 @@ export const updateComplaintStatus = async (req, res) => {
 
     } catch (error) {
         console.error('Update Status Error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Server error while updating status'
-        });
+        next(error);
     }
 };
 
@@ -331,7 +313,7 @@ export const updateComplaintStatus = async (req, res) => {
  * POST /api/complaints/:id/feedback
  * Allowed: complaint owner only, status must be RESOLVED
  */
-export const submitFeedback = async (req, res) => {
+export const submitFeedback = async (req, res, next) => {
     try {
         const { rating, comment } = req.body;
 
@@ -403,10 +385,7 @@ export const submitFeedback = async (req, res) => {
 
     } catch (error) {
         console.error('Submit Feedback Error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Server error while submitting feedback'
-        });
+        next(error);
     }
 };
 
@@ -414,7 +393,7 @@ export const submitFeedback = async (req, res) => {
  * Download complaint attachment
  * GET /api/complaints/:id/attachments/:filename
  */
-export const downloadAttachment = async (req, res) => {
+export const downloadAttachment = async (req, res, next) => {
     try {
         const { id, filename } = req.params;
 
@@ -456,9 +435,6 @@ export const downloadAttachment = async (req, res) => {
 
     } catch (error) {
         console.error('Download Attachment Error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Server error while downloading attachment'
-        });
+        next(error);
     }
 };

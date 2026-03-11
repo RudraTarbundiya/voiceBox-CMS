@@ -3,11 +3,12 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
 import { useAuth } from '../../context/AuthContext';
-import { Link, useNavigate, Navigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import GoogleLoginButton from '../../components/auth/GoogleLoginButton';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { sanitizePayload } from '../../utils/sanitize';
+import api from '../../api/axios';
 
 export default function Register() {
     const { register, user, loading } = useAuth();
@@ -21,6 +22,16 @@ export default function Register() {
     });
     const [error, setError] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [otpSent, setOtpSent] = useState(false);
+    const [otpValue, setOtpValue] = useState('');
+    const [isSendingOtp, setIsSendingOtp] = useState(false);
+    const [otpTimer, setOtpTimer] = useState(0);
+
+    const configuredDomain = import.meta.env.VITE_DOMAIN ;
+    const allowedDomain = configuredDomain.startsWith('@')
+        ? configuredDomain.toLowerCase()
+        : `@${configuredDomain.toLowerCase()}`;
+    const isValidDomain = formData.email.toLowerCase().endsWith(allowedDomain);
 
     // If already logged in, redirect to dashboard based on role
     useEffect(() => {
@@ -36,12 +47,49 @@ export default function Register() {
         }
     }, [user, loading, navigate]);
 
+    // Countdown timer for OTP resend
+    useEffect(() => {
+        if (otpTimer <= 0) return;
+        const interval = setInterval(() => setOtpTimer(t => t - 1), 1000);
+        return () => clearInterval(interval);
+    }, [otpTimer]);
+
+    const handleSendOtp = async () => {
+        if (!formData.email) {
+            toast.error('Please enter your email first');
+            return;
+        }
+        if (!isValidDomain) {
+            toast.error(`Only ${allowedDomain} email addresses are allowed`);
+            return;
+        }
+        setIsSendingOtp(true);
+        try {
+            const response = await api.post('/auth/send-otp', { email: formData.email });
+            toast.success(response.data.message || 'OTP sent to your email!');
+            setOtpSent(true);
+            setOtpTimer(60);
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to send OTP');
+        } finally {
+            setIsSendingOtp(false);
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (!otpSent) {
+            toast.error('Please verify your email with OTP first');
+            return;
+        }
+        if (!otpValue || otpValue.length !== 4) {
+            toast.error('Please enter the 4-digit OTP');
+            return;
+        }
         setIsSubmitting(true);
         setError(null);
         try {
-            await register(sanitizePayload(formData));
+            await register(sanitizePayload({ ...formData, otp: otpValue }));
             toast.success('Account created successfully!');
             navigate('/dashboard');
         } catch (err) {
@@ -92,16 +140,54 @@ export default function Register() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-sm font-medium leading-none" htmlFor="email">College Email</label>
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    placeholder="john@college.edu"
-                                    required
-                                    value={formData.email}
-                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                />
+                                <label className="text-sm font-medium leading-none" htmlFor="email">
+                                    College Email <span className="text-xs text-muted-foreground">(must be {allowedDomain})</span>
+                                </label>
+                                <div className="flex gap-2">
+                                    <Input
+                                        id="email"
+                                        type="email"
+                                        placeholder={`yourname${allowedDomain}`}
+                                        required
+                                        value={formData.email}
+                                        onChange={(e) => {
+                                            setFormData({ ...formData, email: e.target.value });
+                                            setOtpSent(false);
+                                            setOtpValue('');
+                                        }}
+                                        className={formData.email && !isValidDomain ? 'border-destructive' : ''}
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className="shrink-0"
+                                        disabled={!isValidDomain || isSendingOtp || otpTimer > 0}
+                                        onClick={handleSendOtp}
+                                    >
+                                        {isSendingOtp ? 'Sending...' : otpTimer > 0 ? `Resend (${otpTimer}s)` : otpSent ? 'Resend OTP' : 'Send OTP'}
+                                    </Button>
+                                </div>
+                                {formData.email && !isValidDomain && (
+                                    <p className="text-xs text-destructive">Only {allowedDomain} emails are allowed</p>
+                                )}
                             </div>
+
+                            {otpSent && (
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium leading-none" htmlFor="otp">Enter OTP</label>
+                                    <Input
+                                        id="otp"
+                                        type="text"
+                                        inputMode="numeric"
+                                        placeholder="4-digit OTP"
+                                        maxLength={4}
+                                        required
+                                        value={otpValue}
+                                        onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                                    />
+                                    <p className="text-xs text-muted-foreground">Check your inbox at {formData.email}</p>
+                                </div>
+                            )}
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">

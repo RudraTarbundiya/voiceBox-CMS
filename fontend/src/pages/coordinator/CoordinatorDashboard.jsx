@@ -26,7 +26,7 @@ export default function CoordinatorDashboard() {
             setSelectedComplaint(null);
             setNote('');
         } catch (err) {
-            toast.error('Failed to update status');
+            toast.error('Failed with ' + (err.response?.data?.message || 'an error'));
             console.error(err);
         } finally {
             setIsUpdating(false);

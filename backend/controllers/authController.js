@@ -7,10 +7,9 @@
 import User from '../models/User.js';
 import Session from '../models/Session.js';
 import { v4 as uuidv4 } from 'uuid';
-import { OAuth2Client } from 'google-auth-library';
-
-// Initialize Google OAuth client
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+import sendOtpService from '../services/resend.service.js';
+import OTP from '../models/OTP.js';
+import { verifyIdTokenAndGetUser } from '../services/google.service.js';
 
 // Cookie options for session
 const cookieOptions = {
@@ -21,23 +20,55 @@ const cookieOptions = {
     secure: process.env.NODE_ENV === 'production' // HTTPS only in production
 };
 
+export const sendOtp= async (req,res,next)=>{
+    const {email}=req.body;
+    if(!email){
+            return res.status(400).json({
+                success: false,
+                message: 'Please provide an email address'
+            });
+    }
+    // Restrict OTP generation to the specified domain only
+    if(!email.toLowerCase().endsWith(process.env.EMAIL_DOMAIN || '@ldce.ac.in')){
+        return res.status(400).json({
+            success: false,
+            message: 'Only emails from the allowed domain can register'
+        });
+    }
+    try {
+        const result = await sendOtpService(email);
+        res.json(result);
+    } catch (error) {
+        console.error('Send OTP Error:', error);
+        next(error);
+    }
+}
+
 /**
  * Register a new user
  * Only student and faculty can self-register
  * POST /api/auth/register
  */
-export const register = async (req, res) => {
+export const register = async (req, res, next) => {
     try {
-        const { name, email, password, role, department } = req.body;
+        const { name, email, password, role, department , otp} = req.body;
 
         // Validate required fields
-        if (!name || !email || !password || !department) {
+        if (!name || !email || !password || !department || !otp) {
             return res.status(400).json({
                 success: false,
-                message: 'Please provide name, email, password, and department'
+                message: 'Please provide name, email, password, department, and OTP'
             });
         }
 
+        // Validate OTP
+        const otpRecord = await OTP.findOne({ email: email.toLowerCase() });
+        if (!otpRecord || String(otpRecord.otp) !== String(otp)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid OTP'
+            });
+        }
         // Only allow student and faculty self-registration
         if (role && !['student', 'faculty'].includes(role)) {
             return res.status(400).json({
@@ -90,6 +121,7 @@ export const register = async (req, res) => {
         });
 
     } catch (error) {
+        
         console.error('Register Error:', error);
 
         // Handle Mongoose validation errors
@@ -100,11 +132,7 @@ export const register = async (req, res) => {
                 message: messages.join(', ')
             });
         }
-
-        res.status(500).json({
-            success: false,
-            message: 'Server error during registration'
-        });
+        next(error);
     }
 };
 
@@ -112,7 +140,7 @@ export const register = async (req, res) => {
  * Login user with email and password
  * POST /api/auth/login
  */
-export const login = async (req, res) => {
+export const login = async (req, res, next) => {
     try {
         const { email, password } = req.body;
 
@@ -172,10 +200,7 @@ export const login = async (req, res) => {
 
     } catch (error) {
         console.error('Login Error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Server error during login'
-        });
+        next(error);
     }
 };
 
@@ -183,7 +208,7 @@ export const login = async (req, res) => {
  * Logout user - delete session from DB
  * POST /api/auth/logout
  */
-export const logout = async (req, res) => {
+export const logout = async (req, res, next) => {
     try {
         const sessionId = req.signedCookies.sessionId;
 
@@ -203,10 +228,7 @@ export const logout = async (req, res) => {
 
     } catch (error) {
         console.error('Logout Error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Server error during logout'
-        });
+        next(error);
     }
 };
 
@@ -214,7 +236,7 @@ export const logout = async (req, res) => {
  * Logout from all devices - delete all sessions for user
  * POST /api/auth/logout-all
  */
-export const logoutAll = async (req, res) => {
+export const logoutAll = async (req, res, next) => {
     try {
         const userId = req.user._id;
 
@@ -233,10 +255,7 @@ export const logoutAll = async (req, res) => {
 
     } catch (error) {
         console.error('Logout All Error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Server error during logout'
-        });
+        next(error);
     }
 };
 
@@ -245,7 +264,7 @@ export const logoutAll = async (req, res) => {
  * Get current user info
  * GET /api/auth/me
  */
-export const getMe = async (req, res) => {
+export const getMe = async (req, res, next) => {
     try {
         // req.user is attached by auth middleware
         res.json({
@@ -261,10 +280,7 @@ export const getMe = async (req, res) => {
 
     } catch (error) {
         console.error('GetMe Error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Server error'
-        });
+        next(error);
     }
 };
 
@@ -273,7 +289,7 @@ export const getMe = async (req, res) => {
  * Handles Google ID token verification and user creation/login
  * POST /api/auth/google
  */
-export const googleAuth = async (req, res) => {
+export const googleAuth = async (req, res, next) => {
     try {
         const { credential, department, role } = req.body;
 
@@ -285,12 +301,17 @@ export const googleAuth = async (req, res) => {
         }
 
         // Verify Google ID token
-        const ticket = await googleClient.verifyIdToken({
-            idToken: credential,
-            audience: process.env.GOOGLE_CLIENT_ID
-        });
+        let payload;
+        try {
+            payload = await verifyIdTokenAndGetUser(credential);
+        } catch (verifyError) {
+            console.error('Google credential verification failed:', verifyError.message);
+            return res.status(401).json({
+                success: false,
+                message: 'Invalid or expired Google credential'
+            });
+        }
 
-        const payload = ticket.getPayload();
         const { sub: googleId, email, name, picture } = payload;
 
         // Check if user exists by Google ID or email
@@ -299,9 +320,10 @@ export const googleAuth = async (req, res) => {
         });
 
         if (user) {
-            // Update Google ID if not set
-            if (!user.googleId) {
-                user.googleId = googleId;
+            // Update Google ID and picture if needed
+            if (!user.googleId) user.googleId = googleId;
+            if (picture && user.picture !== picture) user.picture = picture;
+            if (!user.googleId || (picture && user.picture !== picture)) {
                 await user.save();
             }
         } else {
@@ -322,14 +344,15 @@ export const googleAuth = async (req, res) => {
                 });
             }
 
-            // Create new user (no password for Google users)
+            // Create new user (random password for Google users)
             user = await User.create({
                 name,
                 email: email.toLowerCase(),
-                password: uuidv4(), // Random password (won't be used)
+                password: uuidv4(),
                 role: role || 'student',
                 department,
-                googleId
+                googleId,
+                picture
             });
         }
 
@@ -361,9 +384,6 @@ export const googleAuth = async (req, res) => {
 
     } catch (error) {
         console.error('Google Auth Error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Google authentication failed'
-        });
+        next(error);
     }
 };

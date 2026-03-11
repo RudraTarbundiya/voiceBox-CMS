@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { useGoogleLogin } from '@react-oauth/google';
-import { Button } from '../ui/button';
+import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
@@ -10,68 +9,129 @@ export default function GoogleLoginButton() {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [showInfoForm, setShowInfoForm] = useState(false);
+    const [pendingCredential, setPendingCredential] = useState(null);
+    const [role, setRole] = useState('student');
+    const [department, setDepartment] = useState('CE');
 
-    const login = useGoogleLogin({
-        onSuccess: async (tokenResponse) => {
-            setLoading(true);
-            setError(null);
-            try {
-                const res = await api.post('/auth/google', {
-                    credential: tokenResponse.access_token
-                });
+    const submitGoogleAuth = async (credential, extraData = {}) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const res = await api.post('/auth/google', {
+                credential,
+                ...extraData
+            });
 
-                if (res.data.success) {
-                    await checkAuth(); // Refresh user context
-                    navigate('/dashboard');
-                } else {
-                    setError(res.data.message || 'Google Auth failed');
-                }
-            } catch (err) {
-                setError(err.response?.data?.message || 'Failed to authenticate with Google');
-            } finally {
+            if (res.data.success) {
+                await checkAuth();
+                navigate('/dashboard');
+            } else if (res.data.requiresInfo) {
+                // New user — need role & department
+                setPendingCredential(credential);
+                setShowInfoForm(true);
                 setLoading(false);
+            } else {
+                setError(res.data.message || 'Google Auth failed');
             }
-        },
-        onError: (error) => {
-            console.error('Google Login Error:', error);
-            setError('Google Sign-In was unsuccessful or closed.');
-        },
-        flow: 'implicit' // As per docs
-    });
+        } catch (err) {
+            const msg = err.response?.data?.message || 'Failed to authenticate with Google';
+            if (err.response?.data?.requiresInfo) {
+                setPendingCredential(credential);
+                setShowInfoForm(true);
+            } else {
+                setError(msg);
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSuccess = (credentialResponse) => {
+        submitGoogleAuth(credentialResponse.credential);
+    };
+
+    const handleError = () => {
+        setError('Google Sign-In was unsuccessful or closed.');
+    };
+
+    const handleInfoSubmit = (e) => {
+        e.preventDefault();
+        if (pendingCredential) {
+            submitGoogleAuth(pendingCredential, { role, department });
+        }
+    };
+
+    const selectClass =
+        'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
+
+    if (showInfoForm) {
+        return (
+            <form onSubmit={handleInfoSubmit} className="space-y-3">
+                <p className="text-sm text-center text-muted-foreground">
+                    Complete your profile to continue with Google
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                        <label className="text-sm font-medium leading-none" htmlFor="google-role">Role</label>
+                        <select
+                            id="google-role"
+                            className={selectClass}
+                            value={role}
+                            onChange={(e) => setRole(e.target.value)}
+                        >
+                            <option value="student">Student</option>
+                            <option value="faculty">Faculty</option>
+                        </select>
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-sm font-medium leading-none" htmlFor="google-dept">Department</label>
+                        <select
+                            id="google-dept"
+                            className={selectClass}
+                            value={department}
+                            onChange={(e) => setDepartment(e.target.value)}
+                        >
+                            <option value="CE">Computer Engineering</option>
+                            <option value="IT">Information Technology</option>
+                            <option value="EC">Electronics &amp; Communication</option>
+                        </select>
+                    </div>
+                </div>
+                {error && <p className="text-sm text-destructive text-center">{error}</p>}
+                <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full h-10 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
+                >
+                    {loading ? 'Signing in...' : 'Continue'}
+                </button>
+                <button
+                    type="button"
+                    onClick={() => { setShowInfoForm(false); setPendingCredential(null); setError(null); }}
+                    className="w-full text-xs text-muted-foreground hover:underline"
+                >
+                    Cancel
+                </button>
+            </form>
+        );
+    }
 
     return (
-        <div className="flex flex-col gap-2">
-            <Button
-                type="button"
-                variant="outline"
-                className="w-full flex items-center justify-center gap-2"
-                onClick={() => login()}
-                disabled={loading}
-            >
-                {loading ? (
-                    <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-foreground"></div>
-                ) : (
-                    <svg className="w-5 h-5" viewBox="0 0 24 24">
-                        <path
-                            fill="currentColor"
-                            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                        />
-                        <path
-                            fill="#34A853"
-                            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                        />
-                        <path
-                            fill="#FBBC05"
-                            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                        />
-                        <path
-                            fill="#EA4335"
-                            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                        />
-                    </svg>
-                )}
-                Continue with Google
-            </Button>
+        <div className="flex flex-col gap-2 items-center">
+            {loading ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-foreground"></div>
+            ) : (
+                <GoogleLogin
+                    onSuccess={handleSuccess}
+                    onError={handleError}
+                    width="300"
+                    text="continue_with"
+                    shape="rectangular"
+                    theme="outline"
+                    useOneTap
+                />
+            )}
             {error && <p className="text-sm text-destructive text-center">{error}</p>}
         </div>
     );

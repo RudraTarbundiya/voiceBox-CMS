@@ -10,19 +10,22 @@ import {
     logout,
     logoutAll,
     getMe,
-    googleAuth
+    googleAuth,
+    sendOtp
 } from '../controllers/authController.js';
 import { authenticate } from '../middleware/authMiddleware.js';
 import { validateRequest } from '../middleware/validateMiddleware.js';
 import {
     registerSchema,
     loginSchema,
-    googleAuthSchema
+    googleAuthSchema,
+    sendOtpSchema
 } from '../validators/schemas.js';
 
 const router = express.Router();
 
 // Public routes
+router.post('/send-otp', validateRequest({ body: sendOtpSchema }), sendOtp);
 router.post('/register', validateRequest({ body: registerSchema }), register);
 router.post('/login', validateRequest({ body: loginSchema }), login);
 router.post('/google', validateRequest({ body: googleAuthSchema }), googleAuth);

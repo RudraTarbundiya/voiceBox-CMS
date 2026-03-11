@@ -85,9 +85,6 @@ app.use(sanitizeRequestData);
 // Cookie parser with secret for signed cookies
 app.use(cookieParser(process.env.COOKIE_SECRET || 'your_super_secret_cookie_key'));
 
-// Serve static files from uploads directory
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
 // ==================== ROUTES ====================
 
 // Health check endpoint

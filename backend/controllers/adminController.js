@@ -17,7 +17,7 @@ import Session from '../models/Session.js';
  * PATCH /api/admin/complaints/:id/assign
  * Allowed: admin only
  */
-export const assignDepartment = async (req, res) => {
+export const assignDepartment = async (req, res , next) => {
     try {
         const { department, note } = req.body;
 
@@ -77,10 +77,7 @@ export const assignDepartment = async (req, res) => {
 
     } catch (error) {
         console.error('Assign Department Error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Server error while assigning department'
-        });
+        next(error);
     }
 };
 
@@ -89,7 +86,7 @@ export const assignDepartment = async (req, res) => {
  * PATCH /api/admin/complaints/:id/close
  * Allowed: admin only
  */
-export const closeComplaint = async (req, res) => {
+export const closeComplaint = async (req, res,next) => {
     try {
         const { note } = req.body;
 
@@ -140,10 +137,7 @@ export const closeComplaint = async (req, res) => {
 
     } catch (error) {
         console.error('Close Complaint Error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Server error while closing complaint'
-        });
+        next(error);
     }
 };
 
@@ -152,7 +146,7 @@ export const closeComplaint = async (req, res) => {
  * PATCH /api/admin/users/:id/promote
  * Allowed: admin only
  */
-export const promoteFacultyToCoordinator = async (req, res) => {
+export const promoteFacultyToCoordinator = async (req, res, next) => {
     try {
         const user = await User.findById(req.params.id);
 
@@ -191,10 +185,7 @@ export const promoteFacultyToCoordinator = async (req, res) => {
 
     } catch (error) {
         console.error('Promote Faculty Error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Server error while promoting faculty'
-        });
+        next(error);
     }
 };
 
@@ -203,7 +194,7 @@ export const promoteFacultyToCoordinator = async (req, res) => {
  * GET /api/admin/users/faculty
  * Allowed: admin only
  */
-export const getFacultyList = async (req, res) => {
+export const getFacultyList = async (req, res ,next) => {
     try {
         const { department } = req.query;
 
@@ -222,10 +213,7 @@ export const getFacultyList = async (req, res) => {
 
     } catch (error) {
         console.error('Get Faculty List Error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Server error while fetching faculty list'
-        });
+        next(error);
     }
 };
 
@@ -234,7 +222,7 @@ export const getFacultyList = async (req, res) => {
  * GET /api/admin/users/coordinators
  * Allowed: admin only
  */
-export const getCoordinatorList = async (req, res) => {
+export const getCoordinatorList = async (req, res, next) => {
     try {
         const coordinators = await User.find({ role: 'coordinator' })
             .select('name email department createdAt')
@@ -248,10 +236,7 @@ export const getCoordinatorList = async (req, res) => {
 
     } catch (error) {
         console.error('Get Coordinator List Error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Server error while fetching coordinator list'
-        });
+        next(error);
     }
 };
 
@@ -260,7 +245,7 @@ export const getCoordinatorList = async (req, res) => {
  * GET /api/admin/users
  * Allowed: admin only
  */
-export const getAllUsers = async (req, res) => {
+export const getAllUsers = async (req, res ,next) => {
     try {
         const { department, role } = req.query;
 
@@ -280,10 +265,7 @@ export const getAllUsers = async (req, res) => {
 
     } catch (error) {
         console.error('Get All Users Error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Server error while fetching users'
-        });
+        next(error);
     }
 };
 
@@ -292,7 +274,7 @@ export const getAllUsers = async (req, res) => {
  * DELETE /api/admin/users/:id/sessions
  * Allowed: admin only
  */
-export const forceLogoutUser = async (req, res) => {
+export const forceLogoutUser = async (req, res, next) => {
     try {
         const user = await User.findById(req.params.id);
 
@@ -324,10 +306,7 @@ export const forceLogoutUser = async (req, res) => {
 
     } catch (error) {
         console.error('Force Logout Error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Server error while force logging out user'
-        });
+        next(error);
     }
 };
 
@@ -336,7 +315,7 @@ export const forceLogoutUser = async (req, res) => {
  * GET /api/admin/stats
  * Allowed: admin only
  */
-export const getAdminStats = async (req, res) => {
+export const getAdminStats = async (req, res, next) => {
     try {
         // Count complaints by status
         const statusCounts = await Complaint.aggregate([
@@ -377,9 +356,6 @@ export const getAdminStats = async (req, res) => {
 
     } catch (error) {
         console.error('Get Admin Stats Error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Server error while fetching stats'
-        });
+        next(error);
     }
 };

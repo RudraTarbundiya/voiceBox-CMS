@@ -29,7 +29,7 @@ export default function ManageUsers() {
             const res = await api.get(`/admin/users${queryString}`);
             setUsers(res.data.users || []);
         } catch (err) {
-            toast.error('Failed to load users');
+            toast.error('failed with ' + (err.response?.data?.message || 'an error'));
         } finally {
             setUsersLoading(false);
         }

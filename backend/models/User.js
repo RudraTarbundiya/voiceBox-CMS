@@ -55,6 +55,10 @@ const userSchema = new mongoose.Schema({
         type: String,
         sparse: true
     },
+    picture : {
+        type: String,
+        default:null
+    },
     createdAt: {
         type: Date,
         default: Date.now

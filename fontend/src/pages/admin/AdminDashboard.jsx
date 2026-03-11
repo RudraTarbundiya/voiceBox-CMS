@@ -29,7 +29,7 @@ export default function AdminDashboard() {
             setSelectedComplaint(null);
             setNote('');
         } catch (err) {
-            toast.error('Failed to assign complaint');
+            toast.error(`Failed with ${err.response?.data?.message || 'an error'}`);
             console.error(err);
         } finally {
             setIsUpdating(false);
@@ -45,7 +45,7 @@ export default function AdminDashboard() {
             setSelectedComplaint(null);
             setNote('');
         } catch (err) {
-            toast.error('Failed to close complaint');
+            toast.error(`Failed with ${err.response?.data?.message || 'an error'}`);
             console.error(err);
         } finally {
             setIsUpdating(false);
@@ -71,7 +71,7 @@ export default function AdminDashboard() {
                         <CardContent className="p-4 flex justify-between items-center">
                             <div>
                                 <p className="text-sm font-medium text-muted-foreground">Total Users</p>
-                                <div className="text-2xl font-bold">{stats.totalUsers || 0}</div>
+                                <div className="text-2xl font-bold">{stats.users.total || 0}</div>
                             </div>
                         </CardContent>
                     </Card>
