@@ -71,8 +71,7 @@ export const assignDepartment = async (req, res , next) => {
 
         res.json({
             success: true,
-            message: `Complaint assigned to ${department} department`,
-            complaint
+            message: `Complaint assigned to ${department} department`
         });
 
     } catch (error) {
@@ -132,7 +131,6 @@ export const closeComplaint = async (req, res,next) => {
         res.json({
             success: true,
             message: 'Complaint closed successfully',
-            complaint
         });
 
     } catch (error) {
@@ -173,14 +171,7 @@ export const promoteFacultyToCoordinator = async (req, res, next) => {
 
         res.json({
             success: true,
-            message: `${user.name} promoted to coordinator for ${user.department} department`,
-            user: {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-                department: user.department
-            }
+            message: `${user.name} promoted to coordinator for ${user.department} department`
         });
 
     } catch (error) {

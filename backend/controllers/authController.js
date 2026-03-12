@@ -111,13 +111,6 @@ export const register = async (req, res, next) => {
         res.status(201).json({
             success: true,
             message: 'Registration successful',
-            user: {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-                department: user.department
-            }
         });
 
     } catch (error) {
@@ -188,14 +181,7 @@ export const login = async (req, res, next) => {
 
         res.json({
             success: true,
-            message: 'Login successful',
-            user: {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-                department: user.department
-            }
+            message: 'Login successful'
         });
 
     } catch (error) {
@@ -274,7 +260,8 @@ export const getMe = async (req, res, next) => {
                 name: req.user.name,
                 email: req.user.email,
                 role: req.user.role,
-                department: req.user.department
+                department: req.user.department,
+                picture: req.user.picture
             }
         });
 
@@ -372,14 +359,7 @@ export const googleAuth = async (req, res, next) => {
 
         res.json({
             success: true,
-            message: 'Google login successful',
-            user: {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-                department: user.department
-            }
+            message: 'Google login successful'
         });
 
     } catch (error) {

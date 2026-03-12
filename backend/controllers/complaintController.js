@@ -430,9 +430,8 @@ export const downloadAttachment = async (req, res, next) => {
         }
 
         // Send file
-        const filePath = path.join(process.cwd(), 'uploads', filename);
+        const filePath = path.join(import.meta.dirname, '..', 'uploads', filename);
         res.download(filePath, attachment.originalName);
-
     } catch (error) {
         console.error('Download Attachment Error:', error);
         next(error);

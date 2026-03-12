@@ -11,14 +11,10 @@
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import helmet from 'helmet';
 import mongoSanitize from 'express-mongo-sanitize';
-
-// Load environment variables
-dotenv.config();
 
 // Import database connection
 import connectDB from './config/db.js';
@@ -31,10 +27,6 @@ import { sanitizeRequestData } from './middleware/sanitizeMiddleware.js';
 
 // Initialize express app
 const app = express();
-
-// Get __dirname equivalent in ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 // Connect to MongoDB
 connectDB();

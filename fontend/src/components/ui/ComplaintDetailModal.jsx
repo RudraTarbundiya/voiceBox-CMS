@@ -1,23 +1,18 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Modal } from './modal';
 import { Badge } from './badge';
 import { Button } from './button';
-import { FileText, Download, Mic, Eye, EyeOff } from 'lucide-react';
+import { FileText, Download, Mic } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const isAudioFile = (mimetype) => mimetype?.startsWith('audio/');
-const isImageFile = (mimetype) => mimetype?.startsWith('image/');
-const isPdfFile = (mimetype) => mimetype === 'application/pdf';
 
 function AttachmentItem({ file, complaintId }) {
-    const [showPreview, setShowPreview] = useState(false);
     const url = `${API_BASE}/complaints/${complaintId}/attachments/${file.filename}`;
-    const canPreview = isAudioFile(file.mimetype) || isImageFile(file.mimetype) || isPdfFile(file.mimetype);
 
     return (
         <div className="rounded-lg border bg-muted/20 overflow-hidden">
-            {/* Compact row */}
             <div className="flex items-center justify-between p-3">
                 <div className="flex items-center gap-3 min-w-0">
                     {isAudioFile(file.mimetype) ? (
@@ -30,42 +25,12 @@ function AttachmentItem({ file, complaintId }) {
                         <p className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(1)} KB</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                    {canPreview && (
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="gap-1"
-                            onClick={() => setShowPreview(!showPreview)}
-                        >
-                            {showPreview ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                            {showPreview ? 'Hide' : 'Preview'}
-                        </Button>
-                    )}
-                    <a href={url} target="_blank" rel="noopener noreferrer">
-                        <Button variant="outline" size="sm" className="gap-1">
-                            <Download className="h-4 w-4" /> Download
-                        </Button>
-                    </a>
-                </div>
+                <a href={url} target="_blank" rel="noopener noreferrer">
+                    <Button variant="outline" size="sm" className="gap-1">
+                        <Download className="h-4 w-4" /> Download
+                    </Button>
+                </a>
             </div>
-
-            {/* Expandable preview */}
-            {showPreview && (
-                <div className="border-t">
-                    {isAudioFile(file.mimetype) && (
-                        <div className="p-3">
-                            <audio controls className="w-full h-8" src={url} />
-                        </div>
-                    )}
-                    {isImageFile(file.mimetype) && (
-                        <img src={url} alt={file.originalName} className="w-full max-h-64 object-contain bg-black/20" />
-                    )}
-                    {isPdfFile(file.mimetype) && (
-                        <iframe src={url} title={file.originalName} className="w-full h-72 border-0" />
-                    )}
-                </div>
-            )}
         </div>
     );
 }
