@@ -6,6 +6,14 @@
 
 import Session from '../models/Session.js';
 
+const isProduction = process.env.NODE_ENV === 'production';
+const clearCookieOptions = {
+    httpOnly: true,
+    signed: true,
+    sameSite: isProduction ? 'none' : 'lax',
+    secure: isProduction
+};
+
 /**
  * Middleware to authenticate user via session cookie
  * Reads signed cookie, validates session in DB, attaches req.user
@@ -27,7 +35,7 @@ export const authenticate = async (req, res, next) => {
 
         if (!session || !session.userId) {
             // Clear invalid cookie
-            res.clearCookie('sessionId');
+            res.clearCookie('sessionId', clearCookieOptions);
             return res.status(401).json({
                 success: false,
                 message: 'Session expired or invalid. Please login again.'

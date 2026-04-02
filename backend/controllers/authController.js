@@ -11,13 +11,22 @@ import sendOtpService from '../services/resend.service.js';
 import OTP from '../models/Otp.js';
 import { verifyIdTokenAndGetUser } from '../services/google.service.js';
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 // Cookie options for session
 const cookieOptions = {
     httpOnly: true,     // Prevent XSS attacks
     signed: true,       // Sign cookie with secret
-    sameSite: 'lax',   // CSRF protection
+    sameSite: isProduction ? 'none' : 'lax',
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    secure: process.env.NODE_ENV === 'production' // HTTPS only in production
+    secure: isProduction // HTTPS only in production
+};
+
+const clearCookieOptions = {
+    httpOnly: true,
+    signed: true,
+    sameSite: cookieOptions.sameSite,
+    secure: cookieOptions.secure
 };
 
 export const sendOtp= async (req,res,next)=>{
@@ -205,7 +214,7 @@ export const logout = async (req, res, next) => {
         }
 
         // Clear cookie
-        res.clearCookie('sessionId');
+        res.clearCookie('sessionId', clearCookieOptions);
 
         res.json({
             success: true,
@@ -232,7 +241,7 @@ export const logoutAll = async (req, res, next) => {
         console.log(`🚪 All sessions deleted for user: ${req.user.email} (${result.deletedCount} sessions)`);
 
         // Clear cookie
-        res.clearCookie('sessionId');
+        res.clearCookie('sessionId', clearCookieOptions);
 
         res.json({
             success: true,

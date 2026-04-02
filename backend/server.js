@@ -15,6 +15,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import helmet from 'helmet';
 import mongoSanitize from 'express-mongo-sanitize';
+import csrf from 'csurf';
 
 // Import database connection
 import connectDB from './config/db.js';
@@ -36,12 +37,23 @@ connectDB();
 
 // CORS configuration - allow frontend with credentials
 const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+const isProduction = process.env.NODE_ENV === 'production';
+
+const csrfProtection = csrf({
+    cookie: {
+        key: '_csrf',
+        httpOnly: true,
+        signed: true,
+        sameSite: isProduction ? 'none' : 'lax',
+        secure: isProduction
+    }
+});
 
 app.use(cors({
     origin: frontendUrl,
     credentials: true, // Allow cookies to be sent
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token']
 }));
 
 // Security headers + CSP to reduce XSS and data injection risks
@@ -77,6 +89,9 @@ app.use(sanitizeRequestData);
 
 // Cookie parser with secret for signed cookies
 app.use(cookieParser(process.env.COOKIE_SECRET || 'your_super_secret_cookie_key'));
+
+// CSRF protection for state-changing requests
+app.use(csrfProtection);
 
 // ==================== ROUTES ====================
 

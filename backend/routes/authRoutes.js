@@ -24,6 +24,13 @@ import {
 
 const router = express.Router();
 
+router.get('/csrf-token', (req, res) => {
+    res.json({
+        success: true,
+        csrfToken: req.csrfToken()
+    });
+});
+
 // Public routes
 router.post('/send-otp', validateRequest({ body: sendOtpSchema }), sendOtp);
 router.post('/register', validateRequest({ body: registerSchema }), register);
