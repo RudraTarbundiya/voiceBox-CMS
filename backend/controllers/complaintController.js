@@ -1,45 +1,39 @@
 /**
  * Complaint Controller
- * Handles complaint CRUD operations, file uploads, and feedback
+ * Handles complaint CRUD operations, Cloudinary attachments, and feedback
  * Role-based access: students/faculty create, coordinators update status, admin close
  */
 
 import Complaint from '../models/Complaint.js';
-import fs from 'fs';
-import path from 'path';
+import cloudinary from '../config/cloudinaryConfig.js';
 
 /**
- * Create a new complaint with optional file attachments
+ * Create a new complaint with optional Cloudinary attachments
  * POST /api/complaints
  * Allowed: student, faculty
+ * 
+ * Body: { title, description, category, attachments: [{ publicId, url, originalName, mimetype, size, resourceType }] }
  */
 export const createComplaint = async (req, res ,next) => {
     try {
-        const { title, description, category } = req.body;
+        const { title, description, category, attachments } = req.body;
 
         // Validate required fields
         if (!title || !description || !category) {
-            // Clean up uploaded files if validation fails
-            if (req.files) {
-                req.files.forEach(file => {
-                    fs.unlink(file.path, err => {
-                        if (err) console.error('Error deleting file:', err);
-                    });
-                });
-            }
             return res.status(400).json({
                 success: false,
                 message: 'Please provide title, description, and category'
             });
         }
 
-        // Process uploaded files
-        const attachments = req.files ? req.files.map(file => ({
-            filename: file.filename,
-            originalName: file.originalname,
-            path: file.path,
-            mimetype: file.mimetype,
-            size: file.size
+        // Process Cloudinary attachment metadata (already uploaded by frontend)
+        const processedAttachments = Array.isArray(attachments) ? attachments.map(att => ({
+            publicId: att.publicId,
+            url: att.url,
+            originalName: att.originalName,
+            mimetype: att.mimetype,
+            size: att.size,
+            resourceType: att.resourceType || 'raw'
         })) : [];
 
         // Create complaint
@@ -49,7 +43,7 @@ export const createComplaint = async (req, res ,next) => {
             category,
             department: req.user.department, // User's department
             createdBy: req.user._id,
-            attachments,
+            attachments: processedAttachments,
             status: 'NEW',
             statusHistory: [{
                 status: 'NEW',
@@ -72,15 +66,6 @@ export const createComplaint = async (req, res ,next) => {
 
     } catch (error) {
         console.error('Create Complaint Error:', error);
-
-        // Clean up uploaded files on error
-        if (req.files) {
-            req.files.forEach(file => {
-                fs.unlink(file.path, err => {
-                    if (err) console.error('Error deleting file:', err);
-                });
-            });
-        }
 
         if (error.name === 'ValidationError') {
             const messages = Object.values(error.errors).map(err => err.message);
@@ -390,12 +375,16 @@ export const submitFeedback = async (req, res, next) => {
 };
 
 /**
- * Download complaint attachment
- * GET /api/complaints/:id/attachments/:filename
+ * Get signed URL for a complaint attachment
+ * GET /api/complaints/:id/attachments/:attachmentIndex
+ * 
+ * Generates a Cloudinary signed URL with 60-second expiry instead of
+ * serving the file directly. Only authorized users can request this.
  */
-export const downloadAttachment = async (req, res, next) => {
+export const getAttachmentSignedUrl = async (req, res, next) => {
     try {
-        const { id, filename } = req.params;
+        const { id, attachmentIndex } = req.params;
+        const index = parseInt(attachmentIndex);
 
         const complaint = await Complaint.findById(id);
 
@@ -419,21 +408,33 @@ export const downloadAttachment = async (req, res, next) => {
             });
         }
 
-        // Find attachment
-        const attachment = complaint.attachments.find(a => a.filename === filename);
-
-        if (!attachment) {
+        // Find attachment by index
+        if (isNaN(index) || index < 0 || index >= complaint.attachments.length) {
             return res.status(404).json({
                 success: false,
                 message: 'Attachment not found'
             });
         }
 
-        // Send file
-        const filePath = path.join(import.meta.dirname, '..', 'uploads', filename);
-        res.download(filePath, attachment.originalName);
+        const attachment = complaint.attachments[index];
+
+        // Generate signed URL for authenticated resource
+        // sign_url: true appends a signature — without it, Cloudinary returns 401
+        const signedUrl = cloudinary.url(attachment.publicId, {
+            type: 'authenticated',
+            resource_type: attachment.resourceType || 'raw',
+            sign_url: true,
+            secure: true
+        });
+
+        res.json({
+            success: true,
+            signedUrl,
+            originalName: attachment.originalName,
+            mimetype: attachment.mimetype
+        });
     } catch (error) {
-        console.error('Download Attachment Error:', error);
+        console.error('Get Attachment Signed URL Error:', error);
         next(error);
     }
 };

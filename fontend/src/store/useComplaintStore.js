@@ -57,17 +57,34 @@ export const useComplaintStore = create((set, get) => ({
         }
     },
 
-    createComplaint: async (formData) => {
+    /**
+     * Create complaint with Cloudinary attachment metadata (JSON body)
+     * @param {Object} complaintData - { title, description, category, attachments: [...] }
+     */
+    createComplaint: async (complaintData) => {
         set({ loading: true, error: null });
         try {
-            const res = await api.post('/complaints', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
-            // Optionally re-fetch after creating
+            const res = await api.post('/complaints', complaintData);
             set({ loading: false });
             return res.data;
         } catch (err) {
             set({ error: err.response?.data?.message || 'Failed to create complaint', loading: false });
+            throw err;
+        }
+    },
+
+    /**
+     * Get a signed URL for downloading/viewing a private attachment
+     * @param {string} complaintId - Complaint ID
+     * @param {number} attachmentIndex - Index of the attachment in the attachments array
+     * @returns {{ signedUrl, originalName, mimetype, expiresIn }}
+     */
+    getAttachmentSignedUrl: async (complaintId, attachmentIndex) => {
+        try {
+            const res = await api.get(`/complaints/${complaintId}/attachments/${attachmentIndex}`);
+            return res.data;
+        } catch (err) {
+            console.error('Failed to get signed URL:', err);
             throw err;
         }
     },

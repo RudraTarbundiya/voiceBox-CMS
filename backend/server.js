@@ -23,6 +23,7 @@ import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import complaintRoutes from './routes/complaintRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+import cloudinaryRoutes from './routes/cloudinaryRoutes.js';
 import { sanitizeRequestData } from './middleware/sanitizeMiddleware.js';
 
 // Initialize express app
@@ -56,7 +57,7 @@ app.use(helmet({
             connectSrc: ["'self'", frontendUrl],
             scriptSrc: ["'self'"],
             styleSrc: ["'self'", "'unsafe-inline'"],
-            imgSrc: ["'self'", 'data:', 'blob:'],
+            imgSrc: ["'self'", 'data:', 'blob:', 'https://res.cloudinary.com'],
             fontSrc: ["'self'", 'data:']
         }
     }
@@ -92,6 +93,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/complaints', complaintRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/cloudinary', cloudinaryRoutes);
 
 // ==================== ERROR HANDLING ====================
 

@@ -21,9 +21,7 @@ export const sendOtpSchema = z.object({
 });
 
 export const attachmentParamSchema = objectIdParamSchema.extend({
-    filename: z.string()
-        .min(1, 'Filename is required')
-        .regex(noPathTraversalRegex, 'Invalid filename')
+    attachmentIndex: z.coerce.number().int().min(0).max(2)
 });
 
 export const registerSchema = z.object({
@@ -50,10 +48,21 @@ export const googleAuthSchema = z.object({
     role: z.enum(selfRegisterRoles).optional()
 });
 
+// Cloudinary attachment validation schema
+const cloudinaryAttachmentSchema = z.object({
+    publicId: z.string().min(1),
+    url: z.string().url(),
+    originalName: z.string().min(1),
+    mimetype: z.string().min(1),
+    size: z.number().int().positive().max(5 * 1024 * 1024), // 5MB max
+    resourceType: z.enum(['image', 'video', 'raw', 'auto']).default('raw')
+});
+
 export const complaintCreateSchema = z.object({
     title: z.string().trim().min(5).max(200),
     description: z.string().trim().min(20).max(5000),
-    category: z.enum(complaintCategories)
+    category: z.enum(complaintCategories),
+    attachments: z.array(cloudinaryAttachmentSchema).max(3).optional().default([])
 });
 
 export const complaintFeedbackSchema = z.object({

@@ -1,15 +1,29 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Modal } from './modal';
 import { Badge } from './badge';
 import { Button } from './button';
-import { FileText, Download, Mic } from 'lucide-react';
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+import { FileText, Download, Mic, Loader2 } from 'lucide-react';
+import { useComplaintStore } from '../../store/useComplaintStore';
+import toast from 'react-hot-toast';
 
 const isAudioFile = (mimetype) => mimetype?.startsWith('audio/');
 
-function AttachmentItem({ file, complaintId }) {
-    const url = `${API_BASE}/complaints/${complaintId}/attachments/${file.filename}`;
+function AttachmentItem({ file, complaintId, attachmentIndex }) {
+    const { getAttachmentSignedUrl } = useComplaintStore();
+    const [loadingUrl, setLoadingUrl] = useState(false);
+
+    const handleDownload = async () => {
+        try {
+            setLoadingUrl(true);
+            const { signedUrl } = await getAttachmentSignedUrl(complaintId, attachmentIndex);
+            // Open the signed URL in a new tab — it expires in 60 seconds
+            window.open(signedUrl, '_blank');
+        } catch (err) {
+            toast.error('Failed to get download link. Please try again.');
+        } finally {
+            setLoadingUrl(false);
+        }
+    };
 
     return (
         <div className="rounded-lg border bg-muted/20 overflow-hidden">
@@ -25,11 +39,20 @@ function AttachmentItem({ file, complaintId }) {
                         <p className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(1)} KB</p>
                     </div>
                 </div>
-                <a href={url} target="_blank" rel="noopener noreferrer">
-                    <Button variant="outline" size="sm" className="gap-1">
-                        <Download className="h-4 w-4" /> Download
-                    </Button>
-                </a>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1"
+                    onClick={handleDownload}
+                    disabled={loadingUrl}
+                >
+                    {loadingUrl ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                        <Download className="h-4 w-4" />
+                    )}
+                    {loadingUrl ? 'Loading...' : 'Download'}
+                </Button>
             </div>
         </div>
     );
@@ -38,6 +61,7 @@ function AttachmentItem({ file, complaintId }) {
 /**
  * Shared Complaint Detail Modal
  * Shows full complaint details with expandable attachment previews
+ * Downloads use Cloudinary signed URLs with 60-second expiry
  */
 export function ComplaintDetailModal({ complaint, isOpen, onClose, children }) {
     if (!complaint) return null;
@@ -88,6 +112,7 @@ export function ComplaintDetailModal({ complaint, isOpen, onClose, children }) {
                                     key={idx}
                                     file={file}
                                     complaintId={complaint._id}
+                                    attachmentIndex={idx}
                                 />
                             ))}
                         </div>

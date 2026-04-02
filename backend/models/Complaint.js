@@ -12,17 +12,17 @@ const CATEGORIES = ['academic', 'infrastructure', 'hostel', 'library', 'it/porta
 const STATUSES = ['NEW', 'ASSIGNED', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'];
 const DEPARTMENTS = ['CE', 'IT', 'EC'];
 
-// Attachment sub-schema for file uploads
+// Attachment sub-schema for Cloudinary uploads
 const attachmentSchema = new mongoose.Schema({
-    filename: {
+    publicId: {
+        type: String,
+        required: true
+    },
+    url: {
         type: String,
         required: true
     },
     originalName: {
-        type: String,
-        required: true
-    },
-    path: {
         type: String,
         required: true
     },
@@ -33,6 +33,12 @@ const attachmentSchema = new mongoose.Schema({
     size: {
         type: Number,
         required: true
+    },
+    resourceType: {
+        type: String,
+        required: true,
+        enum: ['image', 'video', 'raw', 'auto'],
+        default: 'raw'
     }
 }, { _id: false });
 

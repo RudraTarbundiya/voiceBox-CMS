@@ -1,6 +1,6 @@
 /**
  * Complaint Routes
- * Handles complaint CRUD operations, file uploads, and feedback
+ * Handles complaint CRUD operations, Cloudinary attachments, and feedback
  */
 
 import express from 'express';
@@ -12,11 +12,10 @@ import {
     getComplaintById,
     updateComplaintStatus,
     submitFeedback,
-    downloadAttachment
+    getAttachmentSignedUrl
 } from '../controllers/complaintController.js';
 import { authenticate } from '../middleware/authMiddleware.js';
 import { requireRole, requireAdmin, requireCoordinator } from '../middleware/roleMiddleware.js';
-import { uploadComplaintFiles, handleUploadError } from '../middleware/uploadMiddleware.js';
 import { validateRequest } from '../middleware/validateMiddleware.js';
 import {
     objectIdParamSchema,
@@ -33,12 +32,12 @@ const router = express.Router();
 // All routes require authentication
 router.use(authenticate);
 
-// Create complaint with file upload (student/faculty only)
+// Create complaint (student/faculty only)
+// Body: { title, description, category, attachments: [...] }
+// No file upload middleware needed — files are uploaded directly to Cloudinary by frontend
 router.post(
     '/',
     requireRole('student', 'faculty'),
-    uploadComplaintFiles,
-    handleUploadError,
     validateRequest({ body: complaintCreateSchema }),
     createComplaint
 );
@@ -66,7 +65,7 @@ router.patch(
 // Submit feedback (complaint owner only)
 router.post('/:id/feedback', validateRequest({ params: objectIdParamSchema, body: complaintFeedbackSchema }), submitFeedback);
 
-// Download attachment
-router.get('/:id/attachments/:filename', validateRequest({ params: attachmentParamSchema }), downloadAttachment);
+// Get signed URL for attachment (replaces direct file download)
+router.get('/:id/attachments/:attachmentIndex', validateRequest({ params: attachmentParamSchema }), getAttachmentSignedUrl);
 
 export default router;

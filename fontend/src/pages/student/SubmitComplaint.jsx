@@ -4,10 +4,11 @@ import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
 import { useComplaintStore } from '../../store/useComplaintStore';
 import { useNavigate } from 'react-router-dom';
-import { Mic, MicOff, UploadCloud, X, Play, Pause, Square, Trash2 } from 'lucide-react';
+import { Mic, MicOff, UploadCloud, X, Play, Pause, Square, Trash2, Loader2, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { sanitizeText } from '../../utils/sanitize';
+import { uploadFilesToCloudinary } from '../../utils/cloudinaryUpload';
 
 export default function SubmitComplaint() {
     const { createComplaint, loading, error } = useComplaintStore();
@@ -20,6 +21,8 @@ export default function SubmitComplaint() {
     });
 
     const [files, setFiles] = useState([]);
+    const [uploading, setUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState({}); // { fileIndex: 'uploading' | 'done' }
 
     // Voice recording state
     const [isRecording, setIsRecording] = useState(false);
@@ -139,29 +142,52 @@ export default function SubmitComplaint() {
         const safeTitle = sanitizeText(formData.title);
         const safeDescription = sanitizeText(formData.description);
 
-        const data = new FormData();
-        data.append('title', safeTitle);
-        data.append('description', safeDescription);
-        data.append('category', formData.category);
-        files.forEach(file => data.append('attachments', file));
-
-        // Attach voice recording as a file
-        if (audioBlob) {
-            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-            const audioFile = new File([audioBlob], `voice-recording-${timestamp}.webm`, {
-                type: 'audio/webm'
-            });
-            data.append('attachments', audioFile);
-        }
-
         try {
-            await createComplaint(data);
+            // Collect all files to upload (regular files + voice recording)
+            const allFiles = [...files];
+            if (audioBlob) {
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+                const audioFile = new File([audioBlob], `voice-recording-${timestamp}.webm`, {
+                    type: 'audio/webm'
+                });
+                allFiles.push(audioFile);
+            }
+
+            let attachments = [];
+
+            if (allFiles.length > 0) {
+                // Step 1: Upload files directly to Cloudinary
+                setUploading(true);
+                setUploadProgress({});
+
+                attachments = await uploadFilesToCloudinary(allFiles, (fileIndex, percent) => {
+                    setUploadProgress(prev => ({
+                        ...prev,
+                        [fileIndex]: percent === 100 ? 'done' : 'uploading'
+                    }));
+                });
+            }
+
+            // Step 2: Submit complaint with Cloudinary metadata (JSON body)
+            await createComplaint({
+                title: safeTitle,
+                description: safeDescription,
+                category: formData.category,
+                attachments
+            });
+
             toast.success('Complaint submitted successfully!');
             navigate('/dashboard');
         } catch (err) {
-            toast.error('Failed to submit complaint');
+            console.error('Submit error:', err);
+            toast.error(err.message || 'Failed to submit complaint');
+        } finally {
+            setUploading(false);
+            setUploadProgress({});
         }
     };
+
+    const isSubmitting = loading || uploading;
 
     return (
         <div className="max-w-3xl mx-auto space-y-6">
@@ -346,12 +372,23 @@ export default function SubmitComplaint() {
                                                 className="flex items-center justify-between p-2 text-sm border bg-card rounded-md"
                                             >
                                                 <span className="truncate flex-1 max-w-[200px]">{file.name}</span>
-                                                <span className="text-xs text-muted-foreground mr-2">
-                                                    {(file.size / 1024 / 1024).toFixed(2)} MB
-                                                </span>
-                                                <button type="button" onClick={() => removeFile(idx)} className="text-destructive hover:bg-destructive/10 p-1 rounded cursor-pointer">
-                                                    <X className="h-4 w-4" />
-                                                </button>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xs text-muted-foreground">
+                                                        {(file.size / 1024 / 1024).toFixed(2)} MB
+                                                    </span>
+                                                    {/* Upload progress indicator */}
+                                                    {uploading && uploadProgress[idx] === 'uploading' && (
+                                                        <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                                                    )}
+                                                    {uploading && uploadProgress[idx] === 'done' && (
+                                                        <CheckCircle className="h-4 w-4 text-green-500" />
+                                                    )}
+                                                    {!uploading && (
+                                                        <button type="button" onClick={() => removeFile(idx)} className="text-destructive hover:bg-destructive/10 p-1 rounded cursor-pointer">
+                                                            <X className="h-4 w-4" />
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </motion.div>
                                         ))}
                                     </div>
@@ -361,12 +398,19 @@ export default function SubmitComplaint() {
 
                         {error && <div className="text-sm text-destructive">{error}</div>}
 
+                        {uploading && (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Uploading files securely to cloud...
+                            </div>
+                        )}
+
                         <div className="flex justify-end pt-4 border-t">
                             <Button type="button" variant="ghost" className="mr-2" onClick={() => navigate('/dashboard')}>
                                 Cancel
                             </Button>
-                            <Button type="submit" disabled={loading}>
-                                {loading ? 'Submitting...' : 'Submit Complaint'}
+                            <Button type="submit" disabled={isSubmitting}>
+                                {uploading ? 'Uploading files...' : loading ? 'Submitting...' : 'Submit Complaint'}
                             </Button>
                         </div>
                     </form>
