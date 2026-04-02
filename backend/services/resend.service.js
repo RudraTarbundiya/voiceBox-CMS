@@ -1,5 +1,5 @@
 import { Resend } from "resend";
-import OTP from '../models/OTP.js';
+import OTP from '../models/Otp.js';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 

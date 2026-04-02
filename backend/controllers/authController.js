@@ -8,7 +8,7 @@ import User from '../models/User.js';
 import Session from '../models/Session.js';
 import { v4 as uuidv4 } from 'uuid';
 import sendOtpService from '../services/resend.service.js';
-import OTP from '../models/OTP.js';
+import OTP from '../models/Otp.js';
 import { verifyIdTokenAndGetUser } from '../services/google.service.js';
 
 // Cookie options for session
