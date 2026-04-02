@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import api from '../api/axios';
+import api from '../api/axios.js';
 import { sanitizePayload } from '../utils/sanitize.js';
 
 export const useComplaintStore = create((set, get) => ({
