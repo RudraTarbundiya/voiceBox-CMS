@@ -1,10 +1,8 @@
 import React from 'react';
-import Lottie from 'lottie-react';
 import { motion } from 'framer-motion';
-// Using a simple abstract geometric shape path for premium loading (embedded base64 or inline JSON is ideal, but for simplicity here we use simple CSS pulsing if Lottie JSON isn't available)
 import { Mic } from 'lucide-react';
 
-export function LoadingAnimation({ fullScreen = false }) {
+export function LoadingAnimation({ fullScreen = false, label = 'Loading System' }) {
     const content = (
         <div className="flex flex-col items-center justify-center space-y-4">
             <motion.div
@@ -27,14 +25,14 @@ export function LoadingAnimation({ fullScreen = false }) {
                 transition={{ duration: 1.5, repeat: Infinity }}
                 className="text-sm font-medium tracking-widest text-muted-foreground uppercase"
             >
-                Loading System
+                {label}
             </motion.p>
         </div>
     );
 
     if (fullScreen) {
         return (
-            <div className="fixed inset-0 z-[100] flex min-h-screen w-full items-center justify-center bg-background/80 backdrop-blur-sm">
+            <div className="fixed inset-0 z-100 flex min-h-screen w-full items-center justify-center bg-background/80 backdrop-blur-sm">
                 {content}
             </div>
         );

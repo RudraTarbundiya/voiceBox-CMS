@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { sanitizeText } from '../../utils/sanitize';
 import { uploadFilesToCloudinary } from '../../utils/cloudinaryUpload';
+import { LoadingAnimation } from '../../components/ui/LoadingAnimation';
 
 export default function SubmitComplaint() {
     const { createComplaint, loading, error } = useComplaintStore();
@@ -23,6 +24,9 @@ export default function SubmitComplaint() {
     const [files, setFiles] = useState([]);
     const [uploading, setUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState({}); // { fileIndex: 'uploading' | 'done' }
+    const [uploadStatusText, setUploadStatusText] = useState('Preparing upload...');
+    const [currentUploadIndex, setCurrentUploadIndex] = useState(0);
+    const [totalUploadFiles, setTotalUploadFiles] = useState(0);
 
     // Voice recording state
     const [isRecording, setIsRecording] = useState(false);
@@ -159,8 +163,22 @@ export default function SubmitComplaint() {
                 // Step 1: Upload files directly to Cloudinary
                 setUploading(true);
                 setUploadProgress({});
+                setCurrentUploadIndex(0);
+                setTotalUploadFiles(allFiles.length);
+                setUploadStatusText(`Uploading attachment 1 of ${allFiles.length}...`);
 
                 attachments = await uploadFilesToCloudinary(allFiles, (fileIndex, percent) => {
+                    setCurrentUploadIndex(fileIndex + 1);
+                    if (percent === 100) {
+                        if (fileIndex + 1 < allFiles.length) {
+                            setUploadStatusText(`Uploading attachment ${fileIndex + 2} of ${allFiles.length}...`);
+                        } else {
+                            setUploadStatusText('Finalizing uploaded files...');
+                        }
+                    } else {
+                        setUploadStatusText(`Uploading attachment ${fileIndex + 1} of ${allFiles.length}...`);
+                    }
+
                     setUploadProgress(prev => ({
                         ...prev,
                         [fileIndex]: percent === 100 ? 'done' : 'uploading'
@@ -169,6 +187,7 @@ export default function SubmitComplaint() {
             }
 
             // Step 2: Submit complaint with Cloudinary metadata (JSON body)
+            setUploadStatusText('Saving complaint details...');
             await createComplaint({
                 title: safeTitle,
                 description: safeDescription,
@@ -184,6 +203,9 @@ export default function SubmitComplaint() {
         } finally {
             setUploading(false);
             setUploadProgress({});
+            setUploadStatusText('Preparing upload...');
+            setCurrentUploadIndex(0);
+            setTotalUploadFiles(0);
         }
     };
 
@@ -191,6 +213,31 @@ export default function SubmitComplaint() {
 
     return (
         <div className="max-w-3xl mx-auto space-y-6">
+            <AnimatePresence>
+                {isSubmitting && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
+                    >
+                        <div className="rounded-xl border bg-card px-8 py-6 shadow-2xl">
+                            <LoadingAnimation label={uploading ? 'Uploading Files' : 'Submitting Complaint'} />
+                            <p className="mt-3 text-center text-sm text-muted-foreground">
+                                {uploading
+                                    ? uploadStatusText
+                                    : 'Submitting your complaint. Please wait...'}
+                            </p>
+                            {uploading && totalUploadFiles > 0 && (
+                                <p className="mt-1 text-center text-xs text-muted-foreground">
+                                    {Math.min(currentUploadIndex, totalUploadFiles)} / {totalUploadFiles} attachment(s)
+                                </p>
+                            )}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             <div>
                 <h1 className="text-3xl font-bold tracking-tight">Submit Complaint</h1>
                 <p className="text-muted-foreground">Describe your issue in detail. You can attach a voice recording as evidence.</p>

@@ -73,6 +73,8 @@ export async function uploadFilesToCloudinary(files, onFileProgress) {
     const results = [];
 
     for (let i = 0; i < files.length; i++) {
+        if (onFileProgress) onFileProgress(i, 0);
+
         const result = await uploadFileToCloudinary(files[i], (percent) => {
             if (onFileProgress) onFileProgress(i, percent);
         });

@@ -5,7 +5,7 @@ import { Button } from '../../components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import api from '../../api/axios';
-import { ArrowUpCircle, LogOut } from 'lucide-react';
+import { ArrowUpCircle, LogOut, RefreshCw } from 'lucide-react';
 
 export default function ManageUsers() {
     const [users, setUsers] = useState([]);
@@ -14,12 +14,13 @@ export default function ManageUsers() {
     const [roleFilter, setRoleFilter] = useState('');
     const [promotingId, setPromotingId] = useState(null);
     const [loggingOutId, setLoggingOutId] = useState(null);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
     useEffect(() => {
         fetchUsers();
     }, [deptFilter, roleFilter]);
 
-    const fetchUsers = async () => {
+    const fetchUsers = async (showSuccessToast = false) => {
         setUsersLoading(true);
         try {
             const params = new URLSearchParams();
@@ -28,11 +29,20 @@ export default function ManageUsers() {
             const queryString = params.toString() ? `?${params.toString()}` : '';
             const res = await api.get(`/admin/users${queryString}`);
             setUsers(res.data.users || []);
+            if (showSuccessToast) {
+                toast.success('Users synced');
+            }
         } catch (err) {
             toast.error('failed with ' + (err.response?.data?.message || 'an error'));
         } finally {
             setUsersLoading(false);
         }
+    };
+
+    const handleRefresh = async () => {
+        setIsRefreshing(true);
+        await fetchUsers(true);
+        setIsRefreshing(false);
     };
 
     const handlePromote = async (userId, userName) => {
@@ -74,9 +84,15 @@ export default function ManageUsers() {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">Manage Users</h1>
-                <p className="text-muted-foreground">View all registered users, promote faculty, or force logout sessions.</p>
+            <div className="flex justify-between items-center">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">Manage Users</h1>
+                    <p className="text-muted-foreground">View all registered users, promote faculty, or force logout sessions.</p>
+                </div>
+                <Button variant="outline" onClick={handleRefresh} disabled={isRefreshing || usersLoading}>
+                    <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                    {isRefreshing ? 'Refreshing...' : 'Refresh'}
+                </Button>
             </div>
 
             {/* Filters */}

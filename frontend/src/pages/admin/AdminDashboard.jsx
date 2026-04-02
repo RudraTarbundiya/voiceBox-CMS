@@ -6,11 +6,13 @@ import { Button } from '../../components/ui/button';
 import { ComplaintDetailModal } from '../../components/ui/ComplaintDetailModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
+import { RefreshCw } from 'lucide-react';
 
 export default function AdminDashboard() {
     const { complaints, fetchAllComplaints, updateComplaintStatus, loading, stats, fetchStats } = useComplaintStore();
     const [selectedComplaint, setSelectedComplaint] = useState(null);
     const [isUpdating, setIsUpdating] = useState(false);
+    const [isRefreshing, setIsRefreshing] = useState(false);
     const [department, setDepartment] = useState('CE');
     const [note, setNote] = useState('');
     const [filter, setFilter] = useState('ALL');
@@ -52,6 +54,18 @@ export default function AdminDashboard() {
         }
     };
 
+    const handleRefresh = async () => {
+        setIsRefreshing(true);
+        try {
+            await Promise.all([fetchAllComplaints(), fetchStats()]);
+            toast.success('Complaints synced');
+        } catch (err) {
+            toast.error('Failed to refresh complaints');
+        } finally {
+            setIsRefreshing(false);
+        }
+    };
+
     const filteredComplaints = filter === 'ALL'
         ? complaints
         : complaints.filter(c => c.status === filter);
@@ -63,6 +77,10 @@ export default function AdminDashboard() {
                     <h1 className="text-3xl font-bold tracking-tight">System Administration</h1>
                     <p className="text-muted-foreground">Globally monitor, route, and close all registered complaints.</p>
                 </div>
+                <Button variant="outline" onClick={handleRefresh} disabled={isRefreshing || loading}>
+                    <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                    {isRefreshing ? 'Refreshing...' : 'Refresh'}
+                </Button>
             </div>
 
             {stats && (
