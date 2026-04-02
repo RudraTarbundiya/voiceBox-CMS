@@ -248,10 +248,29 @@ export const getAllUsers = async (req, res ,next) => {
             .select('name email department role createdAt')
             .sort({ role: 1, department: 1, name: 1 });
 
+        const userIds = users.map((user) => user._id);
+        const complaintCounts = await Complaint.aggregate([
+            { $match: { createdBy: { $in: userIds } } },
+            { $group: { _id: '$createdBy', count: { $sum: 1 } } }
+        ]);
+
+        const complaintCountMap = complaintCounts.reduce((acc, item) => {
+            acc[item._id.toString()] = item.count;
+            return acc;
+        }, {});
+
+        const usersWithComplaintCount = users.map((user) => {
+            const userObj = user.toObject();
+            return {
+                ...userObj,
+                complaintCount: complaintCountMap[user._id.toString()] || 0
+            };
+        });
+
         res.json({
             success: true,
-            count: users.length,
-            users
+            count: usersWithComplaintCount.length,
+            users: usersWithComplaintCount
         });
 
     } catch (error) {

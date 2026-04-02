@@ -134,6 +134,7 @@ export default function ManageUsers() {
                                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Email</th>
                                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Department</th>
                                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Role</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Complaints</th>
                                     <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
@@ -163,6 +164,9 @@ export default function ManageUsers() {
                                                 <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${getRoleBadgeColor(user.role)}`}>
                                                     {user.role.toUpperCase()}
                                                 </span>
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <span className="text-sm font-semibold">{user.complaintCount ?? 0}</span>
                                             </td>
                                             <td className="px-4 py-3">
                                                 <div className="flex justify-end gap-2">

@@ -100,6 +100,15 @@ export function ComplaintDetailModal({ complaint, isOpen, onClose, children }) {
                     </p>
                 </div>
 
+                <div>
+                    <p className="text-sm font-medium mb-2">Submitted By</p>
+                    <div className="rounded-md border bg-muted/20 p-3">
+                        <p className="text-sm font-medium">{complaint.createdBy?.name || 'Unknown User'}</p>
+                        <p className="text-sm text-muted-foreground">{complaint.createdBy?.email || 'No email available'}</p>
+                        <p className="text-xs text-muted-foreground mt-1">Department: {complaint.createdBy?.department || complaint.department}</p>
+                    </div>
+                </div>
+
                 {/* Attachments */}
                 {complaint.attachments && complaint.attachments.length > 0 && (
                     <div>

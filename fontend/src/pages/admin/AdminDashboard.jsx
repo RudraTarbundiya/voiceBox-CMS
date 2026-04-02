@@ -157,6 +157,11 @@ export default function AdminDashboard() {
                                         <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
                                             {complaint.description}
                                         </p>
+                                        <div className="mb-3 rounded-md border bg-muted/20 px-3 py-2">
+                                            <p className="text-xs font-medium text-muted-foreground">Submitted By</p>
+                                            <p className="text-sm font-medium">{complaint.createdBy?.name || 'Unknown User'}</p>
+                                            <p className="text-xs text-muted-foreground">{complaint.createdBy?.email || 'No email available'}</p>
+                                        </div>
                                         <div className="flex justify-end gap-2 mt-auto">
                                             <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); setSelectedComplaint(complaint); }}>
                                                 View Details
