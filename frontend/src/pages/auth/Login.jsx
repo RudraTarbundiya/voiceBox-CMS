@@ -35,9 +35,16 @@ export default function Login() {
         setIsSubmitting(true);
         setError(null);
         try {
-            await login(sanitizePayload(formData));
+            const data = await login(sanitizePayload(formData));
             toast.success('Login successful! Welcome back.');
-            navigate('/dashboard');
+            const role = data?.user?.role;
+            if (role === 'admin') {
+                navigate('/admin', { replace: true });
+            } else if (role === 'coordinator') {
+                navigate('/coordinator', { replace: true });
+            } else {
+                navigate('/dashboard', { replace: true });
+            }
         } catch (err) {
             toast.error(err.response?.data?.message || 'Invalid credentials');
             setError(err.response?.data?.message || 'Invalid credentials');

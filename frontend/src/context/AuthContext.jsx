@@ -21,11 +21,14 @@ export const AuthProvider = ({ children }) => {
             const res = await api.get('/auth/me');
             if (res.data.success) {
                 setUser(res.data.user);
+                return res.data.user;
             } else {
                 setUser(null);
+                return null;
             }
         } catch (error) {
             setUser(null);
+            return null;
         } finally {
             setLoading(false);
         }
@@ -39,7 +42,10 @@ export const AuthProvider = ({ children }) => {
         const safeCredentials = sanitizePayload(credentials);
         const res = await api.post('/auth/login', safeCredentials);
         if (res.data.success) {
-            setUser(res.data.user);
+            // Backend login only sets the session cookie, doesn't return user data
+            // So we fetch the user profile from /auth/me
+            const user = await checkAuth();
+            return { ...res.data, user };
         }
         return res.data;
     };
@@ -48,7 +54,8 @@ export const AuthProvider = ({ children }) => {
         const safeUserData = sanitizePayload(userData);
         const res = await api.post('/auth/register', safeUserData);
         if (res.data.success) {
-            setUser(res.data.user);
+            const user = await checkAuth();
+            return { ...res.data, user };
         }
         return res.data;
     };
