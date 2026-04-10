@@ -37,6 +37,7 @@ connectDB();
 
 // CORS configuration - allow frontend with credentials
 const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+const frontendUrl2 = process.env.FRONTEND_URL2 || 'http://localhost:5174';
 const isProduction = process.env.NODE_ENV === 'production';
 
 const csrfProtection = csrf({
@@ -50,7 +51,7 @@ const csrfProtection = csrf({
 });
 
 app.use(cors({
-    origin: frontendUrl, 
+    origin: [frontendUrl, frontendUrl2].filter(Boolean),
     credentials: true, // Allow cookies to be sent
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token']
@@ -66,7 +67,7 @@ app.use(helmet({
             objectSrc: ["'none'"],
             frameAncestors: ["'none'"],
             formAction: ["'self'"],
-            connectSrc: ["'self'", frontendUrl].filter(Boolean),
+            connectSrc: ["'self'", frontendUrl, frontendUrl2].filter(Boolean),
             scriptSrc: ["'self'"],
             styleSrc: ["'self'", "'unsafe-inline'"],
             imgSrc: ["'self'", 'data:', 'blob:', 'https://res.cloudinary.com'],
@@ -140,6 +141,7 @@ app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
     console.log(`📡 API: http://localhost:${PORT}/api`);
     console.log(`🔗 Frontend: ${process.env.FRONTEND_URL || 'http://localhost:5173'}`);
+    console.log(`🔗 Frontend 2: ${process.env.FRONTEND_URL2 || 'http://localhost:5174'}`);
     console.log('═══════════════════════════════════════════════════');
 });
 
